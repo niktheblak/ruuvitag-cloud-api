@@ -71,6 +71,11 @@ func main() {
 	http.HandleFunc("/measurements", func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
 		name := query.Get("name")
+		if name == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Query parameter name must be specified"))
+			return
+		}
 		var start, end time.Time
 		if query.Get("start") != "" {
 			start, _ = time.Parse("2006-01-02", query.Get("start"))
@@ -86,6 +91,7 @@ func main() {
 			log.Printf("Error while querying measurements: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error while querying measurements"))
+			return
 		}
 		body, _ := json.Marshal(measurements)
 		w.Write(body)
