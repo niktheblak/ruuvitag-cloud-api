@@ -65,6 +65,9 @@ func main() {
 		ctx: ctx,
 		ds:  client,
 	}
+	http.HandleFunc("/check", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK"))
+	})
 	http.HandleFunc("/measurements", func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
 		name := query.Get("name")
