@@ -3,3 +3,5 @@ api_version: go1
 handlers:
 - url: /.*
   script: _go_app
+env_variables:
+  DATASTORE_PROJECT_ID: "ruuvitag-212713"
