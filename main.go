@@ -77,12 +77,7 @@ func (s *Service) ListMeasurements(name string, from, to time.Time, limit int) (
 func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	ctx := appengine.NewContext(r)
-	var appID string
-	if appengine.IsDevAppServer() {
-		appID = "ruuvitag-212713"
-	} else {
-		appID = appengine.AppID(ctx)
-	}
+	appID := getAppID(ctx)
 	client, err := datastore.NewClient(ctx, appID)
 	if err != nil {
 		log.Errorf(ctx, "Error while creating datastore client: %v", err)
@@ -121,7 +116,7 @@ func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 	ctx := appengine.NewContext(r)
-	appID := appengine.AppID(ctx)
+	appID := getAppID(ctx)
 	client, err := datastore.NewClient(ctx, appID)
 	if err != nil {
 		log.Errorf(ctx, "Error while creating datastore client: %v", err)
@@ -162,6 +157,14 @@ func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Errorf(ctx, "Error while writing response: %v", err)
 	}
+}
+
+func getAppID(ctx context.Context) string {
+	id := appengine.AppID(ctx)
+	if appengine.IsDevAppServer() || id == "None" {
+		return "ruuvitag-212713"
+	}
+	return id
 }
 
 func main() {
