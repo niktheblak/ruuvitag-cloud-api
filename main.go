@@ -67,8 +67,8 @@ func (s *Service) GetMeasurements(name string, from, to time.Time, limit int) (m
 
 func GetMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
-	// Read project ID from environment variable DATASTORE_PROJECT_ID
-	client, err := datastore.NewClient(ctx, "")
+	appID := appengine.AppID(ctx)
+	client, err := datastore.NewClient(ctx, appID)
 	if err != nil {
 		log.Errorf(ctx, "Error while creating datastore client: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
