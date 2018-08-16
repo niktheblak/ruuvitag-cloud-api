@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -122,24 +123,9 @@ func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer client.Close()
 	query := r.URL.Query()
-	var from, to time.Time
-	if query.Get("from") != "" {
-		from, _ = time.Parse("2006-01-02", query.Get("from"))
-	}
-	if query.Get("to") != "" {
-		to, _ = time.Parse("2006-01-02", query.Get("to"))
-	}
-	if !from.IsZero() && !to.IsZero() && from == to {
-		to = to.AddDate(0, 0, 1)
-	}
-	var limit int64
-	if query.Get("limit") != "" {
-		limit, _ = strconv.ParseInt(query.Get("limit"), 10, 64)
-	}
-	if limit <= 0 {
-		limit = 20
-	}
-	measurements, err := NewService(ctx, client).ListMeasurements(name, from, to, int(limit))
+	from, to := parseTimeRange(query)
+	limit := parseLimit(query)
+	measurements, err := NewService(ctx, client).ListMeasurements(name, from, to, limit)
 	if err != nil {
 		log.Errorf(ctx, "Error while querying measurements: %v", err)
 		http.Error(w, "Error while querying measurement", http.StatusInternalServerError)
@@ -160,6 +146,30 @@ func getAppID(ctx context.Context) string {
 		return "ruuvitag-212713"
 	}
 	return id
+}
+
+func parseTimeRange(query url.Values) (from time.Time, to time.Time) {
+	if query.Get("from") != "" {
+		from, _ = time.Parse("2006-01-02", query.Get("from"))
+	}
+	if query.Get("to") != "" {
+		to, _ = time.Parse("2006-01-02", query.Get("to"))
+	}
+	if !from.IsZero() && !to.IsZero() && from == to {
+		to = to.AddDate(0, 0, 1)
+	}
+	return
+}
+
+func parseLimit(query url.Values) int {
+	var limit int64
+	if query.Get("limit") != "" {
+		limit, _ = strconv.ParseInt(query.Get("limit"), 10, 64)
+	}
+	if limit <= 0 {
+		limit = 20
+	}
+	return int(limit)
 }
 
 func main() {
