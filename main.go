@@ -81,28 +81,24 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
 	client, err := datastore.NewClient(ctx, appID)
 	if err != nil {
 		log.Errorf(ctx, "Error while creating datastore client: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error while creating datastore client"))
+		http.Error(w, "Error while creating datastore client", http.StatusInternalServerError)
 		return
 	}
 	defer client.Close()
 	id, err := strconv.ParseInt(vars["id"], 10, 64)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("ID parameter must be numeric"))
+		http.Error(w, "ID parameter must be numeric", http.StatusBadRequest)
 		return
 	}
 	m, err := NewService(ctx, client).GetMeasurement(id)
 	switch err {
 	case nil:
 	case datastore.ErrNoSuchEntity:
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Measurement with given ID not found"))
+		http.Error(w, "Measurement with given ID not found", http.StatusNotFound)
 		return
 	default:
 		log.Errorf(ctx, "Error while querying measurement %v: %v", id, err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error while querying measurement"))
+		http.Error(w, "Error while querying measurement", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -121,8 +117,7 @@ func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 	client, err := datastore.NewClient(ctx, appID)
 	if err != nil {
 		log.Errorf(ctx, "Error while creating datastore client: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error while creating datastore client"))
+		http.Error(w, "Error while creating datastore client", http.StatusInternalServerError)
 		return
 	}
 	defer client.Close()
@@ -147,8 +142,7 @@ func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 	measurements, err := NewService(ctx, client).ListMeasurements(name, from, to, int(limit))
 	if err != nil {
 		log.Errorf(ctx, "Error while querying measurements: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error while querying measurements"))
+		http.Error(w, "Error while querying measurement", http.StatusInternalServerError)
 		return
 	}
 	log.Debugf(ctx, "Read %v measurements for RuuviTag %v", len(measurements), name)
