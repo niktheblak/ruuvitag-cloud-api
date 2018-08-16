@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"cloud.google.com/go/datastore"
 	"google.golang.org/appengine"
+	"google.golang.org/appengine/log"
 )
 
 type Measurement struct {
@@ -54,7 +54,7 @@ func GetMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 	// Read project ID from environment variable DATASTORE_PROJECT_ID
 	client, err := datastore.NewClient(ctx, "")
 	if err != nil {
-		log.Printf("Error while creating datastore client: %v", err)
+		log.Errorf(ctx, "Error while creating datastore client: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error while creating datastore client"))
 		return
@@ -79,16 +79,17 @@ func GetMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	measurements, err := GetMeasurements(ctx, client, name, start, end)
 	if err != nil {
-		log.Printf("Error while querying measurements: %v", err)
+		log.Errorf(ctx, "Error while querying measurements: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error while querying measurements"))
 		return
 	}
+	log.Debugf(ctx, "Read %v measurements for RuuviTag %v", len(measurements), name)
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 	err = enc.Encode(measurements)
 	if err != nil {
-		log.Printf("Error while writing response: %v", err)
+		log.Errorf(ctx, "Error while writing response: %v", err)
 	}
 }
 
