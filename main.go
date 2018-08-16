@@ -105,6 +105,7 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Error while querying measurement"))
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
 	err = enc.Encode(m)
 	if err != nil {
