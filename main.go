@@ -178,7 +178,7 @@ func main() {
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
-	r.HandleFunc("/check", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/_ah/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
 	m := r.PathPrefix("/measurements").Subrouter()
