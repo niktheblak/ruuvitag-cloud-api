@@ -14,12 +14,12 @@ import (
 )
 
 type Measurement struct {
-	Name        string    `datastore:"name"`
-	MAC         string    `datastore:"mac"`
-	Timestamp   time.Time `datastore:"ts"`
-	Temperature float64   `datastore:"temperature"`
-	Humidity    float64   `datastore:"humidity"`
-	Pressure    float64   `datastore:"pressure"`
+	Name        string    `json:"name" datastore:"name"`
+	MAC         string    `json:"mac" datastore:"mac"`
+	Timestamp   time.Time `json:"ts" datastore:"ts"`
+	Temperature float64   `json:"temperature" datastore:"temperature"`
+	Humidity    float64   `json:"humidity" datastore:"humidity"`
+	Pressure    float64   `json:"pressure" datastore:"pressure"`
 	id          int64
 }
 
