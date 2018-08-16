@@ -12,12 +12,17 @@ import (
 	"google.golang.org/appengine"
 )
 
-type Service struct {
-	ctx context.Context
-	ds  *datastore.Client
+type Measurement struct {
+	Name        string    `datastore:"name"`
+	MAC         string    `datastore:"mac"`
+	Timestamp   time.Time `datastore:"ts"`
+	Temperature float64   `datastore:"temperature"`
+	Humidity    float64   `datastore:"humidity"`
+	Pressure    float64   `datastore:"pressure"`
+	id          int64
 }
 
-func (s *Service) GetMeasurements(name string, start, end time.Time) (measurements []Measurement, err error) {
+func GetMeasurements(ctx context.Context, client *datastore.Client, name string, start, end time.Time) (measurements []Measurement, err error) {
 	if !start.IsZero() && !end.IsZero() && start.After(end) {
 		return nil, fmt.Errorf("start timestamp cannot after end timestamp")
 	}
@@ -34,7 +39,7 @@ func (s *Service) GetMeasurements(name string, start, end time.Time) (measuremen
 		query = query.Filter(k, v)
 	}
 	query = query.Order("-ts")
-	keys, err := s.ds.GetAll(s.ctx, query, &measurements)
+	keys, err := client.GetAll(ctx, query, &measurements)
 	if err != nil {
 		return
 	}
@@ -44,58 +49,57 @@ func (s *Service) GetMeasurements(name string, start, end time.Time) (measuremen
 	return
 }
 
-type Measurement struct {
-	Name        string    `datastore:"name"`
-	MAC         string    `datastore:"mac"`
-	Timestamp   time.Time `datastore:"ts"`
-	Temperature float64   `datastore:"temperature"`
-	Humidity    float64   `datastore:"humidity"`
-	Pressure    float64   `datastore:"pressure"`
-	id          int64
-}
-
-func main() {
-	ctx := context.Background()
+func GetMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := appengine.NewContext(r)
 	// Read project ID from environment variable DATASTORE_PROJECT_ID
 	client, err := datastore.NewClient(ctx, "")
 	if err != nil {
-		log.Fatalf("Error while creating client: %v", err)
+		log.Printf("Error while creating datastore client: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Error while creating datastore client"))
+		return
 	}
-	service := Service{
-		ctx: ctx,
-		ds:  client,
+	defer client.Close()
+	query := r.URL.Query()
+	name := query.Get("name")
+	if name == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Query parameter name must be specified"))
+		return
 	}
+	var start, end time.Time
+	if query.Get("start") != "" {
+		start, _ = time.Parse("2006-01-02", query.Get("start"))
+	}
+	if query.Get("end") != "" {
+		end, _ = time.Parse("2006-01-02", query.Get("end"))
+	}
+	if !start.IsZero() && !end.IsZero() && start == end {
+		end = end.AddDate(0, 0, 1)
+	}
+	measurements, err := GetMeasurements(ctx, client, name, start, end)
+	if err != nil {
+		log.Printf("Error while querying measurements: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Error while querying measurements"))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	enc := json.NewEncoder(w)
+	err = enc.Encode(measurements)
+	if err != nil {
+		log.Printf("Error while writing response: %v", err)
+	}
+}
+
+func main() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK"))
+	})
 	http.HandleFunc("/check", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
-	http.HandleFunc("/measurements", func(w http.ResponseWriter, r *http.Request) {
-		query := r.URL.Query()
-		name := query.Get("name")
-		if name == "" {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Query parameter name must be specified"))
-			return
-		}
-		var start, end time.Time
-		if query.Get("start") != "" {
-			start, _ = time.Parse("2006-01-02", query.Get("start"))
-		}
-		if query.Get("end") != "" {
-			end, _ = time.Parse("2006-01-02", query.Get("end"))
-		}
-		if !start.IsZero() && !end.IsZero() && start == end {
-			end = end.AddDate(0, 0, 1)
-		}
-		measurements, err := service.GetMeasurements(name, start, end)
-		if err != nil {
-			log.Printf("Error while querying measurements: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error while querying measurements"))
-			return
-		}
-		body, _ := json.Marshal(measurements)
-		w.Write(body)
-	})
+	http.HandleFunc("/measurements", GetMeasurementsHandler)
 	http.ListenAndServe(":8080", nil)
 	appengine.Main()
 }
