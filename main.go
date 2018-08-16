@@ -27,7 +27,7 @@ func GetMeasurements(ctx context.Context, client *datastore.Client, name string,
 		return nil, fmt.Errorf("start timestamp cannot after end timestamp")
 	}
 	filters := make(map[string]interface{})
-	filters["name"] = name
+	filters["name ="] = name
 	if !start.IsZero() {
 		filters["ts >="] = start
 	}
