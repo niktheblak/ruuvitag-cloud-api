@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"cloud.google.com/go/datastore"
@@ -22,24 +23,39 @@ type Measurement struct {
 	id          int64
 }
 
-func GetMeasurements(ctx context.Context, client *datastore.Client, name string, start, end time.Time) (measurements []Measurement, err error) {
-	if !start.IsZero() && !end.IsZero() && start.After(end) {
-		return nil, fmt.Errorf("start timestamp cannot after end timestamp")
+type Service struct {
+	ctx    context.Context
+	client *datastore.Client
+}
+
+func NewService(ctx context.Context, client *datastore.Client) *Service {
+	return &Service{
+		ctx:    ctx,
+		client: client,
+	}
+}
+
+func (s *Service) GetMeasurements(name string, from, to time.Time, limit int) (measurements []Measurement, err error) {
+	if !from.IsZero() && !to.IsZero() && from.After(to) {
+		return nil, fmt.Errorf("from timestamp cannot after to timestamp")
 	}
 	filters := make(map[string]interface{})
 	filters["name ="] = name
-	if !start.IsZero() {
-		filters["ts >="] = start
+	if !from.IsZero() {
+		filters["ts >="] = from
 	}
-	if !end.IsZero() {
-		filters["ts <"] = end
+	if !to.IsZero() {
+		filters["ts <"] = to
 	}
 	query := datastore.NewQuery("Measurement")
 	for k, v := range filters {
 		query = query.Filter(k, v)
 	}
 	query = query.Order("-ts")
-	keys, err := client.GetAll(ctx, query, &measurements)
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	keys, err := s.client.GetAll(s.ctx, query, &measurements)
 	if err != nil {
 		return
 	}
@@ -67,17 +83,24 @@ func GetMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Query parameter name must be specified"))
 		return
 	}
-	var start, end time.Time
-	if query.Get("start") != "" {
-		start, _ = time.Parse("2006-01-02", query.Get("start"))
+	var from, to time.Time
+	if query.Get("from") != "" {
+		from, _ = time.Parse("2006-01-02", query.Get("from"))
 	}
-	if query.Get("end") != "" {
-		end, _ = time.Parse("2006-01-02", query.Get("end"))
+	if query.Get("to") != "" {
+		to, _ = time.Parse("2006-01-02", query.Get("to"))
 	}
-	if !start.IsZero() && !end.IsZero() && start == end {
-		end = end.AddDate(0, 0, 1)
+	if !from.IsZero() && !to.IsZero() && from == to {
+		to = to.AddDate(0, 0, 1)
 	}
-	measurements, err := GetMeasurements(ctx, client, name, start, end)
+	var limit int64
+	if query.Get("limit") != "" {
+		limit, _ = strconv.ParseInt(query.Get("limit"), 10, 64)
+	}
+	if limit <= 0 {
+		limit = 20
+	}
+	measurements, err := NewService(ctx, client).GetMeasurements(name, from, to, int(limit))
 	if err != nil {
 		log.Errorf(ctx, "Error while querying measurements: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
