@@ -42,6 +42,7 @@ func NewService(ctx context.Context, client *datastore.Client) *Service {
 func (s *Service) GetMeasurement(id int64) (measurement Measurement, err error) {
 	key := datastore.IDKey(Kind, id, nil)
 	err = s.client.Get(s.ctx, key, &measurement)
+	measurement.ID = id
 	return
 }
 
