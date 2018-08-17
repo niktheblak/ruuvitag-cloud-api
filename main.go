@@ -92,7 +92,8 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ID parameter must be numeric", http.StatusBadRequest)
 		return
 	}
-	m, err := NewService(ctx, client).GetMeasurement(id)
+	service := NewService(ctx, client)
+	measurement, err := service.GetMeasurement(id)
 	switch err {
 	case nil:
 	case datastore.ErrNoSuchEntity:
@@ -103,12 +104,7 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error while querying measurement", http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	enc := json.NewEncoder(w)
-	err = enc.Encode(m)
-	if err != nil {
-		log.Errorf(ctx, "Error while writing response: %v", err)
-	}
+	writeJSON(ctx, w, measurement)
 }
 
 func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
@@ -126,16 +122,22 @@ func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	from, to := parseTimeRange(query)
 	limit := parseLimit(query)
-	measurements, err := NewService(ctx, client).ListMeasurements(name, from, to, limit)
+	service := NewService(ctx, client)
+	measurements, err := service.ListMeasurements(name, from, to, limit)
 	if err != nil {
 		log.Errorf(ctx, "Error while querying measurements: %v", err)
 		http.Error(w, "Error while querying measurement", http.StatusInternalServerError)
 		return
 	}
 	log.Debugf(ctx, "Read %v measurements for RuuviTag %v", len(measurements), name)
+	writeJSON(ctx, w, measurements)
+}
+
+func writeJSON(ctx context.Context, w http.ResponseWriter, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	enc := json.NewEncoder(w)
-	err = enc.Encode(measurements)
+	err := enc.Encode(v)
 	if err != nil {
 		log.Errorf(ctx, "Error while writing response: %v", err)
 	}
