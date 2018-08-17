@@ -178,10 +178,10 @@ func parseLimit(query url.Values) int {
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK"))
+		fmt.Fprintln(w, "OK")
 	})
 	r.HandleFunc("/_ah/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK"))
+		fmt.Fprintln(w, "OK")
 	})
 	m := r.PathPrefix("/measurements").Subrouter()
 	m.HandleFunc("/{name}", ListMeasurementsHandler)
