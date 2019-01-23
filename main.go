@@ -4,15 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"time"
 
 	"cloud.google.com/go/datastore"
 	"github.com/gorilla/mux"
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/log"
 )
 
 const Kind = "Measurement"
@@ -78,11 +78,11 @@ func (s *Service) ListMeasurements(name string, from, to time.Time, limit int) (
 
 func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	ctx := appengine.NewContext(r)
+	ctx := r.Context()
 	appID := getAppID(ctx)
 	client, err := datastore.NewClient(ctx, appID)
 	if err != nil {
-		log.Errorf(ctx, "Error while creating datastore client: %v", err)
+		log.Printf("Error while creating datastore client: %v", err)
 		http.Error(w, "Error while creating datastore client", http.StatusInternalServerError)
 		return
 	}
@@ -100,7 +100,7 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Measurement with given ID not found", http.StatusNotFound)
 		return
 	default:
-		log.Errorf(ctx, "Error while querying measurement %v: %v", id, err)
+		log.Printf("Error while querying measurement %v: %v", id, err)
 		http.Error(w, "Error while querying measurement", http.StatusInternalServerError)
 		return
 	}
@@ -110,11 +110,11 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
 func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
-	ctx := appengine.NewContext(r)
+	ctx := r.Context()
 	appID := getAppID(ctx)
 	client, err := datastore.NewClient(ctx, appID)
 	if err != nil {
-		log.Errorf(ctx, "Error while creating datastore client: %v", err)
+		log.Printf("Error while creating datastore client: %v", err)
 		http.Error(w, "Error while creating datastore client", http.StatusInternalServerError)
 		return
 	}
@@ -125,11 +125,10 @@ func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 	service := NewService(ctx, client)
 	measurements, err := service.ListMeasurements(name, from, to, limit)
 	if err != nil {
-		log.Errorf(ctx, "Error while querying measurements: %v", err)
+		log.Printf("Error while querying measurements: %v", err)
 		http.Error(w, "Error while querying measurement", http.StatusInternalServerError)
 		return
 	}
-	log.Debugf(ctx, "Read %v measurements for RuuviTag %v", len(measurements), name)
 	writeJSON(ctx, w, measurements)
 }
 
@@ -139,13 +138,13 @@ func writeJSON(ctx context.Context, w http.ResponseWriter, v interface{}) {
 	enc := json.NewEncoder(w)
 	err := enc.Encode(v)
 	if err != nil {
-		log.Errorf(ctx, "Error while writing response: %v", err)
+		log.Printf("Error while writing response: %v", err)
 	}
 }
 
 func getAppID(ctx context.Context) string {
-	id := appengine.AppID(ctx)
-	if appengine.IsDevAppServer() || id == "None" {
+	id := os.Getenv("GAE_APPLICATION")
+	if id == "" || id == "None" {
 		return "ruuvitag-212713"
 	}
 	return id
@@ -176,6 +175,10 @@ func parseLimit(query url.Values) int {
 }
 
 func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	r := mux.NewRouter()
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "OK")
@@ -187,6 +190,6 @@ func main() {
 	m.HandleFunc("/{name}", ListMeasurementsHandler)
 	m.HandleFunc("/{name}/{id:[0-9]+}", GetMeasurementHandler)
 	http.Handle("/", r)
-	http.ListenAndServe(":8080", nil)
-	appengine.Main()
+	log.Printf("Listening on port %s", port)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
 }
