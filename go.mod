@@ -1,7 +1,7 @@
 module github.com/niktheblak/ruuvitag-api
 
 require (
-	cloud.google.com/go v0.35.1 // indirect
+	cloud.google.com/go v0.35.1
 	dmitri.shuralyov.com/app/changes v0.0.0-20181114035150-5af16e21babb // indirect
 	dmitri.shuralyov.com/service/change v0.0.0-20190119025054-42f2f11cf6af // indirect
 	git.apache.org/thrift.git v0.12.0 // indirect
@@ -13,6 +13,7 @@ require (
 	github.com/google/pprof v0.0.0-20190109223431-e84dfd68c163 // indirect
 	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
+	github.com/gorilla/mux v1.6.2
 	github.com/gregjones/httpcache v0.0.0-20181110185634-c63ab54fda8f // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.6.4 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.2 // indirect
