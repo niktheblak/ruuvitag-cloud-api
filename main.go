@@ -79,8 +79,7 @@ func (s *Service) ListMeasurements(name string, from, to time.Time, limit int) (
 func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	ctx := r.Context()
-	appID := getAppID(ctx)
-	client, err := datastore.NewClient(ctx, appID)
+	client, err := datastore.NewClient(ctx, "")
 	if err != nil {
 		log.Printf("Error while creating datastore client: %v", err)
 		http.Error(w, "Error while creating datastore client", http.StatusInternalServerError)
@@ -111,8 +110,7 @@ func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 	ctx := r.Context()
-	appID := getAppID(ctx)
-	client, err := datastore.NewClient(ctx, appID)
+	client, err := datastore.NewClient(ctx, "")
 	if err != nil {
 		log.Printf("Error while creating datastore client: %v", err)
 		http.Error(w, "Error while creating datastore client", http.StatusInternalServerError)
@@ -140,14 +138,6 @@ func writeJSON(ctx context.Context, w http.ResponseWriter, v interface{}) {
 	if err != nil {
 		log.Printf("Error while writing response: %v", err)
 	}
-}
-
-func getAppID(ctx context.Context) string {
-	id := os.Getenv("GAE_APPLICATION")
-	if id == "" || id == "None" {
-		return "ruuvitag-212713"
-	}
-	return id
 }
 
 func parseTimeRange(query url.Values) (from time.Time, to time.Time) {
