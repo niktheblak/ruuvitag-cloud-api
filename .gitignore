@@ -18,6 +18,7 @@
 ### Go Patch ###
 /vendor/
 /Godeps/
+cmd/appengine/vendor/
 
 
 # End of https://www.gitignore.io/api/go

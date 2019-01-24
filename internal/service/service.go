@@ -1,4 +1,4 @@
-package main
+package service
 
 import (
 	"context"
@@ -7,25 +7,13 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
 
 	"cloud.google.com/go/datastore"
 	"github.com/gorilla/mux"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
 )
-
-const Kind = "Measurement"
-
-type Measurement struct {
-	Name        string    `json:"name" datastore:"name"`
-	MAC         string    `json:"mac" datastore:"mac"`
-	Timestamp   time.Time `json:"ts" datastore:"ts"`
-	Temperature float64   `json:"temperature" datastore:"temperature"`
-	Humidity    float64   `json:"humidity" datastore:"humidity"`
-	Pressure    float64   `json:"pressure" datastore:"pressure"`
-	ID          int64     `json:"id" datastore:"-"`
-}
 
 type Service struct {
 	ctx    context.Context
@@ -39,14 +27,14 @@ func NewService(ctx context.Context, client *datastore.Client) *Service {
 	}
 }
 
-func (s *Service) GetMeasurement(id int64) (measurement Measurement, err error) {
-	key := datastore.IDKey(Kind, id, nil)
-	err = s.client.Get(s.ctx, key, &measurement)
-	measurement.ID = id
+func (s *Service) GetMeasurement(id int64) (m measurement.Measurement, err error) {
+	key := datastore.IDKey(measurement.Kind, id, nil)
+	err = s.client.Get(s.ctx, key, &m)
+	m.ID = id
 	return
 }
 
-func (s *Service) ListMeasurements(name string, from, to time.Time, limit int) (measurements []Measurement, err error) {
+func (s *Service) ListMeasurements(name string, from, to time.Time, limit int) (measurements []measurement.Measurement, err error) {
 	if !from.IsZero() && !to.IsZero() && from.After(to) {
 		return nil, fmt.Errorf("from timestamp cannot be after to timestamp")
 	}
@@ -58,7 +46,7 @@ func (s *Service) ListMeasurements(name string, from, to time.Time, limit int) (
 	if !to.IsZero() {
 		filters["ts <"] = to
 	}
-	query := datastore.NewQuery(Kind)
+	query := datastore.NewQuery(measurement.Kind)
 	for k, v := range filters {
 		query = query.Filter(k, v)
 	}
@@ -162,24 +150,4 @@ func parseLimit(query url.Values) int {
 		limit = 20
 	}
 	return int(limit)
-}
-
-func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-	r := mux.NewRouter()
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "OK")
-	})
-	r.HandleFunc("/_ah/health", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "OK")
-	})
-	m := r.PathPrefix("/measurements").Subrouter()
-	m.HandleFunc("/{name}", ListMeasurementsHandler)
-	m.HandleFunc("/{name}/{id:[0-9]+}", GetMeasurementHandler)
-	http.Handle("/", r)
-	log.Printf("Listening on port %s", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
 }
