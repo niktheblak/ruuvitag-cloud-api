@@ -19,6 +19,6 @@
 /vendor/
 /Godeps/
 cmd/appengine/vendor/
-
+cmd/appengine/.gcloudignore
 
 # End of https://www.gitignore.io/api/go
