@@ -69,7 +69,7 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	client, err := datastore.NewClient(ctx, "")
 	if err != nil {
-		log.Printf("Error while creating datastore client: %v", err)
+		log.Fatalf("Error while creating datastore client: %v", err)
 		http.Error(w, "Error while creating datastore client", http.StatusInternalServerError)
 		return
 	}
@@ -80,7 +80,7 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	service := NewService(ctx, client)
-	measurement, err := service.GetMeasurement(id)
+	m, err := service.GetMeasurement(id)
 	switch err {
 	case nil:
 	case datastore.ErrNoSuchEntity:
@@ -91,7 +91,7 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error while querying measurement", http.StatusInternalServerError)
 		return
 	}
-	writeJSON(ctx, w, measurement)
+	writeJSON(w, m)
 }
 
 func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +100,7 @@ func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	client, err := datastore.NewClient(ctx, "")
 	if err != nil {
-		log.Printf("Error while creating datastore client: %v", err)
+		log.Fatalf("Error while creating datastore client: %v", err)
 		http.Error(w, "Error while creating datastore client", http.StatusInternalServerError)
 		return
 	}
@@ -115,10 +115,10 @@ func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error while querying measurement", http.StatusInternalServerError)
 		return
 	}
-	writeJSON(ctx, w, measurements)
+	writeJSON(w, measurements)
 }
 
-func writeJSON(ctx context.Context, w http.ResponseWriter, v interface{}) {
+func writeJSON(w http.ResponseWriter, v interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	enc := json.NewEncoder(w)

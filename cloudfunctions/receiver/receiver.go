@@ -46,7 +46,7 @@ func (jm *JSONMeasurement) ToMeasurement() (*measurement.Measurement, error) {
 
 func ReceiveMeasurement(ctx context.Context, msg PubSubMessage) error {
 	if len(msg.Data) == 0 {
-		return errors.New("Message does not contain payload")
+		return errors.New("message does not contain payload")
 	}
 	var jm JSONMeasurement
 	err := json.Unmarshal(msg.Data, &jm)
@@ -54,19 +54,19 @@ func ReceiveMeasurement(ctx context.Context, msg PubSubMessage) error {
 		log.Printf("Failed to parse measurement JSON: %v. Payload: %s", err, string(msg.Data))
 		return err
 	}
-	dsClient, err := datastore.NewClient(ctx, "")
+	client, err := datastore.NewClient(ctx, "")
 	if err != nil {
 		log.Printf("Failed to create datastore client: %v", err)
 		return err
 	}
-	defer dsClient.Close()
+	defer client.Close()
 	key := datastore.IncompleteKey(measurement.Kind, nil)
 	m, err := jm.ToMeasurement()
 	if err != nil {
 		log.Printf("Failed to convert measurement to stored entity: %v", err)
 		return err
 	}
-	_, err = dsClient.Put(ctx, key, m)
+	_, err = client.Put(ctx, key, m)
 	if err != nil {
 		log.Printf("Failed to store measurement: %v", err)
 		return err
