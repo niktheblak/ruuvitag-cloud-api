@@ -35,9 +35,6 @@ func (s *Service) GetMeasurement(id int64) (m measurement.Measurement, err error
 }
 
 func (s *Service) ListMeasurements(name string, from, to time.Time, limit int) (measurements []measurement.Measurement, err error) {
-	if !from.IsZero() && !to.IsZero() && from.After(to) {
-		return nil, fmt.Errorf("from timestamp cannot be after to timestamp")
-	}
 	filters := make(map[string]interface{})
 	filters["name ="] = name
 	if !from.IsZero() {
@@ -45,9 +42,10 @@ func (s *Service) ListMeasurements(name string, from, to time.Time, limit int) (
 	}
 	if !to.IsZero() {
 		filters["ts <"] = to
-	}
-	if to.Sub(from) <= time.Hour*24 {
-		limit = 0
+		if to.Sub(from) <= time.Hour*24 {
+			// Don't limit number of results if the query is for less than one day
+			limit = 0
+		}
 	}
 	query := datastore.NewQuery(measurement.Kind)
 	for k, v := range filters {
@@ -107,7 +105,11 @@ func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request, ps httprout
 	}
 	defer client.Close()
 	query := r.URL.Query()
-	from, to := parseTimeRange(query)
+	from, to, err := parseTimeRange(query)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	limit := parseLimit(query)
 	service := NewService(ctx, client)
 	measurements, err := service.ListMeasurements(name, from, to, limit)
@@ -129,15 +131,27 @@ func writeJSON(w http.ResponseWriter, v interface{}) {
 	}
 }
 
-func parseTimeRange(query url.Values) (from time.Time, to time.Time) {
+func parseTimeRange(query url.Values) (from time.Time, to time.Time, err error) {
 	if query.Get("from") != "" {
-		from, _ = time.Parse("2006-01-02", query.Get("from"))
+		from, err = time.Parse("2006-01-02", query.Get("from"))
+	}
+	if err != nil {
+		return
 	}
 	if query.Get("to") != "" {
-		to, _ = time.Parse("2006-01-02", query.Get("to"))
+		to, err = time.Parse("2006-01-02", query.Get("to"))
+	}
+	if err != nil {
+		return
 	}
 	if !from.IsZero() && !to.IsZero() && from == to {
 		to = to.AddDate(0, 0, 1)
+	}
+	if to.IsZero() || to.After(time.Now()) {
+		to = time.Now().UTC()
+	}
+	if from.After(to) {
+		err = fmt.Errorf("from timestamp cannot be after to timestamp")
 	}
 	return
 }
