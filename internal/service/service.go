@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
-	"github.com/gorilla/mux"
+	"github.com/julienschmidt/httprouter"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
 )
 
@@ -67,8 +67,7 @@ func (s *Service) ListMeasurements(name string, from, to time.Time, limit int) (
 	return
 }
 
-func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
+func GetMeasurementHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	ctx := r.Context()
 	client, err := datastore.NewClient(ctx, "")
 	if err != nil {
@@ -77,7 +76,7 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer client.Close()
-	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	id, err := strconv.ParseInt(ps.ByName("id"), 10, 64)
 	if err != nil {
 		http.Error(w, "ID parameter must be numeric", http.StatusBadRequest)
 		return
@@ -97,9 +96,8 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, m)
 }
 
-func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	name := vars["name"]
+func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	name := ps.ByName("name")
 	ctx := r.Context()
 	client, err := datastore.NewClient(ctx, "")
 	if err != nil {
