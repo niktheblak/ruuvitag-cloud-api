@@ -46,6 +46,9 @@ func (s *Service) ListMeasurements(name string, from, to time.Time, limit int) (
 	if !to.IsZero() {
 		filters["ts <"] = to
 	}
+	if to.Sub(from) <= time.Hour*24 {
+		limit = 0
+	}
 	query := datastore.NewQuery(measurement.Kind)
 	for k, v := range filters {
 		query = query.Filter(k, v)
