@@ -56,8 +56,7 @@ func ReceiveMeasurement(ctx context.Context, msg PubSubMessage) error {
 	}
 	client, err := datastore.NewClient(ctx, "")
 	if err != nil {
-		log.Printf("Failed to create datastore client: %v", err)
-		return err
+		log.Fatalf("Failed to create datastore client: %v", err)
 	}
 	defer client.Close()
 	key := datastore.IncompleteKey(measurement.Kind, nil)
