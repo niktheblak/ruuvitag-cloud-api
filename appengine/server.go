@@ -20,8 +20,6 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	client, err := datastore.NewClient(ctx, "")
 	if err != nil {
 		log.Fatalf("Error while creating datastore client: %v", err)
-		http.Error(w, "Error while creating datastore client", http.StatusInternalServerError)
-		return
 	}
 	defer client.Close()
 	id, err := strconv.ParseInt(ps.ByName("id"), 10, 64)
@@ -50,8 +48,6 @@ func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request, ps httprout
 	client, err := datastore.NewClient(ctx, "")
 	if err != nil {
 		log.Fatalf("Error while creating datastore client: %v", err)
-		http.Error(w, "Error while creating datastore client", http.StatusInternalServerError)
-		return
 	}
 	defer client.Close()
 	query := r.URL.Query()
