@@ -2,14 +2,14 @@ package measurement
 
 import "time"
 
-const Kind = "Measurement"
+const Collection = "measurements"
 
 type Measurement struct {
-	Name        string    `json:"name" datastore:"name"`
-	MAC         string    `json:"mac" datastore:"mac"`
-	Timestamp   time.Time `json:"ts" datastore:"ts"`
-	Temperature float64   `json:"temperature" datastore:"temperature,noindex"`
-	Humidity    float64   `json:"humidity" datastore:"humidity,noindex"`
-	Pressure    float64   `json:"pressure" datastore:"pressure,noindex"`
-	ID          int64     `json:"id" datastore:"-"`
+	Name        string    `json:"name" firestore:"name"`
+	MAC         string    `json:"mac" firestore:"mac"`
+	Timestamp   time.Time `json:"ts" firestore:"ts"`
+	Temperature float64   `json:"temperature" firestore:"temperature"`
+	Humidity    float64   `json:"humidity" firestore:"humidity"`
+	Pressure    float64   `json:"pressure" firestore:"pressure"`
+	ID          string    `json:"id" firestore:"-"`
 }

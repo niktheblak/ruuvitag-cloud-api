@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"cloud.google.com/go/datastore"
+	"cloud.google.com/go/firestore"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
 )
 
@@ -54,18 +54,17 @@ func ReceiveMeasurement(ctx context.Context, msg PubSubMessage) error {
 		log.Printf("Failed to parse measurement JSON: %v. Payload: %s", err, string(msg.Data))
 		return err
 	}
-	client, err := datastore.NewClient(ctx, "")
+	client, err := firestore.NewClient(ctx, firestore.DetectProjectID)
 	if err != nil {
 		log.Fatalf("Failed to create datastore client: %v", err)
 	}
 	defer client.Close()
-	key := datastore.IncompleteKey(measurement.Kind, nil)
 	m, err := jm.ToMeasurement()
 	if err != nil {
 		log.Printf("Failed to convert measurement to stored entity: %v", err)
 		return err
 	}
-	_, err = client.Put(ctx, key, m)
+	_, _, err = client.Collection(measurement.Collection).Add(ctx, m)
 	if err != nil {
 		log.Printf("Failed to store measurement: %v", err)
 		return err

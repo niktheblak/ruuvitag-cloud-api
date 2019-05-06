@@ -10,28 +10,24 @@ import (
 	"strconv"
 	"time"
 
-	"cloud.google.com/go/datastore"
+	"cloud.google.com/go/firestore"
 	"github.com/julienschmidt/httprouter"
 	"github.com/niktheblak/ruuvitag-cloud-api/internal/service"
 )
 
 func GetMeasurementHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	ctx := r.Context()
-	client, err := datastore.NewClient(ctx, "")
+	client, err := firestore.NewClient(ctx, firestore.DetectProjectID)
 	if err != nil {
 		log.Fatalf("Error while creating datastore client: %v", err)
 	}
 	defer client.Close()
-	id, err := strconv.ParseInt(ps.ByName("id"), 10, 64)
-	if err != nil {
-		http.Error(w, "ID parameter must be numeric", http.StatusBadRequest)
-		return
-	}
+	id := ps.ByName("id")
 	srv := service.NewService(ctx, client)
 	m, err := srv.GetMeasurement(id)
 	switch err {
 	case nil:
-	case datastore.ErrNoSuchEntity:
+	case service.ErrNotFound:
 		http.Error(w, "Measurement with given ID not found", http.StatusNotFound)
 		return
 	default:
@@ -45,7 +41,7 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	name := ps.ByName("name")
 	ctx := r.Context()
-	client, err := datastore.NewClient(ctx, "")
+	client, err := firestore.NewClient(ctx, firestore.DetectProjectID)
 	if err != nil {
 		log.Fatalf("Error while creating datastore client: %v", err)
 	}
