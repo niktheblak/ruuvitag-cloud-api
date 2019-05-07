@@ -2,5 +2,3 @@ runtime: go111
 handlers:
 - url: /.*
   script: auto
-env_variables:
-  DATASTORE_PROJECT_ID: "ruuvitag-212713"
