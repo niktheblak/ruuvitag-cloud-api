@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -15,13 +16,10 @@ import (
 	"github.com/niktheblak/ruuvitag-cloud-api/internal/service"
 )
 
+var client *firestore.Client
+
 func GetMeasurementHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	ctx := r.Context()
-	client, err := firestore.NewClient(ctx, firestore.DetectProjectID)
-	if err != nil {
-		log.Fatalf("Error while creating datastore client: %v", err)
-	}
-	defer client.Close()
 	id := ps.ByName("id")
 	srv := service.NewService(ctx, client)
 	m, err := srv.GetMeasurement(id)
@@ -41,11 +39,6 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	name := ps.ByName("name")
 	ctx := r.Context()
-	client, err := firestore.NewClient(ctx, firestore.DetectProjectID)
-	if err != nil {
-		log.Fatalf("Error while creating datastore client: %v", err)
-	}
-	defer client.Close()
 	query := r.URL.Query()
 	from, to, err := parseTimeRange(query)
 	if err != nil {
@@ -110,6 +103,12 @@ func parseLimit(query url.Values) int {
 }
 
 func main() {
+	ctx := context.Background()
+	var err error
+	client, err = firestore.NewClient(ctx, firestore.DetectProjectID)
+	if err != nil {
+		log.Fatalf("Error while creating datastore client: %v", err)
+	}
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
