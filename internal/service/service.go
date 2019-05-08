@@ -62,7 +62,7 @@ func (s *Service) ListMeasurements(name string, from, to time.Time, limit int) (
 	docs := query.Documents(s.ctx)
 	defer docs.Stop()
 	var doc *firestore.DocumentSnapshot
-	for doc, err = docs.Next(); err == nil; {
+	for doc, err = docs.Next(); err == nil; doc, err = docs.Next() {
 		var m measurement.Measurement
 		err = doc.DataTo(&m)
 		if err != nil {
