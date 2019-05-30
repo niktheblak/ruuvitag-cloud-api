@@ -15,35 +15,29 @@ import (
 var ErrNotFound = errors.New("measurement with given ID not found")
 
 type Service struct {
-	ctx    context.Context
 	client *firestore.Client
 }
 
-func NewService(ctx context.Context, client *firestore.Client) *Service {
+func NewService(client *firestore.Client) *Service {
 	return &Service{
-		ctx:    ctx,
 		client: client,
 	}
 }
 
-func (s *Service) GetMeasurement(id string) (m measurement.Measurement, err error) {
-	r, err := s.client.Collection(measurement.Collection).Doc(id).Get(s.ctx)
+func (s *Service) GetMeasurement(ctx context.Context, id string) (m measurement.Measurement, err error) {
+	r, err := s.client.Collection(measurement.Collection).Doc(id).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		err = ErrNotFound
-		return
 	}
 	if err != nil {
 		return
 	}
 	err = r.DataTo(&m)
-	if err != nil {
-		return
-	}
 	m.ID = id
 	return
 }
 
-func (s *Service) ListMeasurements(name string, from, to time.Time, limit int) (measurements []measurement.Measurement, err error) {
+func (s *Service) ListMeasurements(ctx context.Context, name string, from, to time.Time, limit int) (measurements []measurement.Measurement, err error) {
 	coll := s.client.Collection(measurement.Collection)
 	query := coll.OrderBy("ts", firestore.Desc).Where("name", "==", name)
 	if !from.IsZero() {
@@ -59,7 +53,7 @@ func (s *Service) ListMeasurements(name string, from, to time.Time, limit int) (
 	if limit > 0 {
 		query = query.Limit(limit)
 	}
-	docs := query.Documents(s.ctx)
+	docs := query.Documents(ctx)
 	defer docs.Stop()
 	var doc *firestore.DocumentSnapshot
 	for doc, err = docs.Next(); err == nil; doc, err = docs.Next() {

@@ -1,28 +1,30 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
 
-	"cloud.google.com/go/firestore"
 	"github.com/julienschmidt/httprouter"
 	"github.com/niktheblak/ruuvitag-cloud-api/internal/service"
 )
 
-var client *firestore.Client
+type Server struct {
+	srv *service.Service
+}
 
-func GetMeasurementHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func NewServer(srv *service.Service) *Server {
+	return &Server{srv}
+}
+
+func (s *Server) GetMeasurementHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	ctx := r.Context()
 	id := ps.ByName("id")
-	srv := service.NewService(ctx, client)
-	m, err := srv.GetMeasurement(id)
+	m, err := s.srv.GetMeasurement(ctx, id)
 	switch err {
 	case nil:
 	case service.ErrNotFound:
@@ -36,7 +38,7 @@ func GetMeasurementHandler(w http.ResponseWriter, r *http.Request, ps httprouter
 	writeJSON(w, m)
 }
 
-func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+func (s *Server) ListMeasurementsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	name := ps.ByName("name")
 	ctx := r.Context()
 	query := r.URL.Query()
@@ -46,8 +48,7 @@ func ListMeasurementsHandler(w http.ResponseWriter, r *http.Request, ps httprout
 		return
 	}
 	limit := parseLimit(query)
-	srv := service.NewService(ctx, client)
-	measurements, err := srv.ListMeasurements(name, from, to, limit)
+	measurements, err := s.srv.ListMeasurements(ctx, name, from, to, limit)
 	if err != nil {
 		log.Printf("Error while querying measurements: %v", err)
 		http.Error(w, "Error while querying measurement", http.StatusInternalServerError)
@@ -100,28 +101,4 @@ func parseLimit(query url.Values) int {
 		limit = 20
 	}
 	return int(limit)
-}
-
-func main() {
-	ctx := context.Background()
-	var err error
-	client, err = firestore.NewClient(ctx, firestore.DetectProjectID)
-	if err != nil {
-		log.Fatalf("Error while creating datastore client: %v", err)
-	}
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-	router := httprouter.New()
-	router.GET("/", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		fmt.Fprintln(w, "OK")
-	})
-	router.GET("/_ah/health", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		fmt.Fprintln(w, "OK")
-	})
-	router.GET("/measurements/:name", ListMeasurementsHandler)
-	router.GET("/measurements/:name/:id", GetMeasurementHandler)
-	log.Printf("Listening on port %s", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), router))
 }
