@@ -2,5 +2,3 @@ runtime: go112
 handlers:
 - url: /.*
   script: auto
-env_variables:
-  USERS: "niko:$2a$10$a1rs7qL8cEicqUZS1ZLvUOp0b3EheOsjOUa18T/5T2KDMl.t0mB9W"

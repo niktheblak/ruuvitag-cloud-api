@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 
 	"cloud.google.com/go/firestore"
 	"github.com/julienschmidt/httprouter"
@@ -15,19 +14,24 @@ import (
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/server"
 )
 
-func readUsers() (middleware.UsersAndPasswordHashes, error) {
-	usersEnv := os.Getenv("USERS")
-	if usersEnv == "" {
-		return nil, nil
+func readUsers(ctx context.Context, client *firestore.Client) (middleware.UsersAndPasswordHashes, error) {
+	coll := client.Collection("users")
+	iter := coll.Documents(ctx)
+	docs, err := iter.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	type User struct {
+		Username     string `firestore:"username"`
+		PasswordHash string `firestore:"password_hash"`
 	}
 	m := make(map[string][]byte)
-	users := strings.Split(usersEnv, ",")
-	for _, user := range users {
-		tokens := strings.SplitN(user, ":", 2)
-		if len(tokens) < 2 {
-			return nil, fmt.Errorf("invalid user: %s", user)
+	for _, doc := range docs {
+		var user User
+		if err := doc.DataTo(&user); err != nil {
+			return nil, err
 		}
-		m[tokens[0]] = []byte(tokens[1])
+		m[user.Username] = []byte(user.PasswordHash)
 	}
 	return middleware.UsersAndPasswordHashes(m), nil
 }
@@ -50,9 +54,12 @@ func main() {
 	router.GET("/_ah/health", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		fmt.Fprintln(w, "OK")
 	})
-	users, err := readUsers()
+	users, err := readUsers(ctx, client)
 	if err != nil {
 		log.Fatal(err)
+	}
+	if len(users) == 0 {
+		log.Printf("Warning: no users in database!")
 	}
 	meas := measurement.NewService(client)
 	srv := server.NewServer(meas)
