@@ -11,9 +11,11 @@ import (
 	"cloud.google.com/go/firestore"
 	"github.com/julienschmidt/httprouter"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/middleware"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/server"
 )
 
-func readUsers() (UsersAndPasswordHashes, error) {
+func readUsers() (middleware.UsersAndPasswordHashes, error) {
 	usersEnv := os.Getenv("USERS")
 	if usersEnv == "" {
 		return nil, nil
@@ -27,7 +29,7 @@ func readUsers() (UsersAndPasswordHashes, error) {
 		}
 		m[tokens[0]] = []byte(tokens[1])
 	}
-	return UsersAndPasswordHashes(m), nil
+	return middleware.UsersAndPasswordHashes(m), nil
 }
 
 func main() {
@@ -53,9 +55,9 @@ func main() {
 		log.Fatal(err)
 	}
 	meas := measurement.NewService(client)
-	server := NewServer(meas)
-	router.GET("/measurements/:name", BasicAuth(server.ListMeasurementsHandler, users))
-	router.GET("/measurements/:name/:id", BasicAuth(server.GetMeasurementHandler, users))
+	srv := server.NewServer(meas)
+	router.GET("/measurements/:name", middleware.BasicAuth(srv.ListMeasurementsHandler, users))
+	router.GET("/measurements/:name/:id", middleware.BasicAuth(srv.GetMeasurementHandler, users))
 	log.Printf("Listening on port %s", port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), router))
 }
