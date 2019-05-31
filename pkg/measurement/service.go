@@ -1,4 +1,4 @@
-package service
+package measurement
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
-	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -24,8 +23,8 @@ func NewService(client *firestore.Client) *Service {
 	}
 }
 
-func (s *Service) GetMeasurement(ctx context.Context, id string) (m measurement.Measurement, err error) {
-	r, err := s.client.Collection(measurement.Collection).Doc(id).Get(ctx)
+func (s *Service) GetMeasurement(ctx context.Context, id string) (m Measurement, err error) {
+	r, err := s.client.Collection(Collection).Doc(id).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		err = ErrNotFound
 	}
@@ -37,8 +36,8 @@ func (s *Service) GetMeasurement(ctx context.Context, id string) (m measurement.
 	return
 }
 
-func (s *Service) ListMeasurements(ctx context.Context, name string, from, to time.Time, limit int) (measurements []measurement.Measurement, err error) {
-	coll := s.client.Collection(measurement.Collection)
+func (s *Service) ListMeasurements(ctx context.Context, name string, from, to time.Time, limit int) (measurements []Measurement, err error) {
+	coll := s.client.Collection(Collection)
 	query := coll.OrderBy("ts", firestore.Desc).Where("name", "==", name)
 	if !from.IsZero() {
 		query = query.Where("ts", ">=", from)
@@ -57,7 +56,7 @@ func (s *Service) ListMeasurements(ctx context.Context, name string, from, to ti
 	defer docs.Stop()
 	var doc *firestore.DocumentSnapshot
 	for doc, err = docs.Next(); err == nil; doc, err = docs.Next() {
-		var m measurement.Measurement
+		var m Measurement
 		err = doc.DataTo(&m)
 		if err != nil {
 			return

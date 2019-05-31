@@ -10,24 +10,26 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/niktheblak/ruuvitag-cloud-api/internal/service"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
 )
 
 type Server struct {
-	srv *service.Service
+	meas *measurement.Service
 }
 
-func NewServer(srv *service.Service) *Server {
-	return &Server{srv}
+func NewServer(meas *measurement.Service) *Server {
+	return &Server{
+		meas: meas,
+	}
 }
 
 func (s *Server) GetMeasurementHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	ctx := r.Context()
 	id := ps.ByName("id")
-	m, err := s.srv.GetMeasurement(ctx, id)
+	m, err := s.meas.GetMeasurement(ctx, id)
 	switch err {
 	case nil:
-	case service.ErrNotFound:
+	case measurement.ErrNotFound:
 		http.Error(w, "Measurement with given ID not found", http.StatusNotFound)
 		return
 	default:
@@ -48,7 +50,7 @@ func (s *Server) ListMeasurementsHandler(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	limit := parseLimit(query)
-	measurements, err := s.srv.ListMeasurements(ctx, name, from, to, limit)
+	measurements, err := s.meas.ListMeasurements(ctx, name, from, to, limit)
 	if err != nil {
 		log.Printf("Error while querying measurements: %v", err)
 		http.Error(w, "Error while querying measurement", http.StatusInternalServerError)

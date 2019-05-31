@@ -10,7 +10,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/julienschmidt/httprouter"
-	"github.com/niktheblak/ruuvitag-cloud-api/internal/service"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
 )
 
 func readUsers() (UsersAndPasswordHashes, error) {
@@ -52,9 +52,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	srv := NewServer(service.NewService(client))
-	router.GET("/measurements/:name", BasicAuth(srv.ListMeasurementsHandler, users))
-	router.GET("/measurements/:name/:id", BasicAuth(srv.GetMeasurementHandler, users))
+	meas := measurement.NewService(client)
+	server := NewServer(meas)
+	router.GET("/measurements/:name", BasicAuth(server.ListMeasurementsHandler, users))
+	router.GET("/measurements/:name/:id", BasicAuth(server.GetMeasurementHandler, users))
 	log.Printf("Listening on port %s", port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), router))
 }
