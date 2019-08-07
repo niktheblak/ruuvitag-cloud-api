@@ -9,6 +9,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/julienschmidt/httprouter"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/auth"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/middleware"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/server"
@@ -34,8 +35,9 @@ func main() {
 	})
 	meas := measurement.NewService(client)
 	srv := server.NewServer(meas)
-	router.GET("/measurements/:name", middleware.BasicAuth(srv.ListMeasurementsHandler, client))
-	router.GET("/measurements/:name/:id", middleware.BasicAuth(srv.GetMeasurementHandler, client))
+	authenticator := auth.NewFirestoreAuthenticator(client, "users")
+	router.GET("/measurements/:name", middleware.Authenticator(srv.ListMeasurementsHandler, authenticator))
+	router.GET("/measurements/:name/:id", middleware.Authenticator(srv.GetMeasurementHandler, authenticator))
 	log.Printf("Listening on port %s", port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), router))
 }

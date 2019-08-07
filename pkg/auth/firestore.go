@@ -1,8 +1,9 @@
-package middleware
+package auth
 
 import (
-	"cloud.google.com/go/firestore"
 	"context"
+
+	"cloud.google.com/go/firestore"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -11,23 +12,19 @@ type User struct {
 	PasswordHash string `firestore:"password_hash"`
 }
 
-type Authenticator interface {
-	Authenticate(ctx context.Context, username, password string) error
-}
-
-type FirebaseAuthenticator struct {
+type FirestoreAuthenticator struct {
 	client     *firestore.Client
 	collection string
 }
 
-func NewFirebaseAuthenticator(client *firestore.Client, collection string) Authenticator {
-	return &FirebaseAuthenticator{
+func NewFirestoreAuthenticator(client *firestore.Client, collection string) Authenticator {
+	return &FirestoreAuthenticator{
 		client:     client,
 		collection: collection,
 	}
 }
 
-func (a *FirebaseAuthenticator) Authenticate(ctx context.Context, username, password string) error {
+func (a *FirestoreAuthenticator) Authenticate(ctx context.Context, username, password string) error {
 	iter := a.client.Collection(a.collection).Where("username", "==", username).Limit(1).Documents(ctx)
 	defer iter.Stop()
 	doc, err := iter.Next()

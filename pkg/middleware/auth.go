@@ -3,19 +3,18 @@ package middleware
 import (
 	"net/http"
 
-	"cloud.google.com/go/firestore"
 	"github.com/julienschmidt/httprouter"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/auth"
 )
 
-func BasicAuth(h httprouter.Handle, client *firestore.Client) httprouter.Handle {
+func Authenticator(h httprouter.Handle, authenticator auth.Authenticator) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		// Get the Basic Authentication credentials
 		user, password, hasAuth := r.BasicAuth()
 		if !hasAuth {
 			authResponse(w)
 			return
 		}
-		err := NewFirebaseAuthenticator(client, "users").Authenticate(r.Context(), user, password)
+		err := authenticator.Authenticate(r.Context(), user, password)
 		if err != nil {
 			authResponse(w)
 			return
