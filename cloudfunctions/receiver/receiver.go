@@ -29,7 +29,10 @@ type JSONMeasurement struct {
 }
 
 func (jm *JSONMeasurement) ToMeasurement() (*measurement.Measurement, error) {
-	ts, err := time.Parse(TimeFormat, jm.Timestamp)
+	ts, err := time.Parse(time.RFC3339Nano, jm.Timestamp)
+	if err != nil {
+		ts, err = time.Parse(TimeFormat, jm.Timestamp)
+	}
 	if err != nil {
 		return nil, err
 	}
