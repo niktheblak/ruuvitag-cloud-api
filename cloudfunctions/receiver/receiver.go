@@ -20,12 +20,16 @@ type PubSubMessage struct {
 }
 
 type JSONMeasurement struct {
-	Name        string  `json:"name"`
-	MAC         string  `json:"mac"`
-	Timestamp   string  `json:"ts"`
-	Temperature float64 `json:"temperature"`
-	Humidity    float64 `json:"humidity"`
-	Pressure    float64 `json:"pressure"`
+	Name          string  `json:"name"`
+	MAC           string  `json:"mac"`
+	Timestamp     string  `json:"ts"`
+	Temperature   float64 `json:"temperature"`
+	Humidity      float64 `json:"humidity"`
+	Pressure      float64 `json:"pressure"`
+	Battery       int     `json:"battery"`
+	AccelerationX int     `json:"acceleration_x"`
+	AccelerationY int     `json:"acceleration_y"`
+	AccelerationZ int     `json:"acceleration_z"`
 }
 
 func (jm *JSONMeasurement) ToMeasurement() (*measurement.Measurement, error) {
@@ -38,12 +42,16 @@ func (jm *JSONMeasurement) ToMeasurement() (*measurement.Measurement, error) {
 	}
 	ts = ts.UTC()
 	return &measurement.Measurement{
-		Name:        jm.Name,
-		MAC:         jm.MAC,
-		Timestamp:   ts,
-		Temperature: jm.Temperature,
-		Humidity:    jm.Humidity,
-		Pressure:    jm.Pressure,
+		Name:          jm.Name,
+		MAC:           jm.MAC,
+		Timestamp:     ts,
+		Temperature:   jm.Temperature,
+		Humidity:      jm.Humidity,
+		Pressure:      jm.Pressure,
+		Battery:       jm.Battery,
+		AccelerationX: jm.AccelerationX,
+		AccelerationY: jm.AccelerationY,
+		AccelerationZ: jm.AccelerationZ,
 	}, nil
 }
 
