@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/niktheblak/ruuvitag-cloud-api/pkg/auth"
+	"github.com/niktheblak/ruuvitag-cloud-api/internal/auth"
 )
 
 func Authenticator(h httprouter.Handle, authenticator auth.Authenticator) httprouter.Handle {

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
-	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
+	"github.com/niktheblak/ruuvitag-cloud-api/internal/measurement"
 )
 
 const (

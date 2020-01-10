@@ -9,10 +9,10 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/julienschmidt/httprouter"
-	"github.com/niktheblak/ruuvitag-cloud-api/pkg/auth"
-	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
-	"github.com/niktheblak/ruuvitag-cloud-api/pkg/middleware"
-	"github.com/niktheblak/ruuvitag-cloud-api/pkg/server"
+	"github.com/niktheblak/ruuvitag-cloud-api/internal/auth"
+	"github.com/niktheblak/ruuvitag-cloud-api/internal/measurement"
+	"github.com/niktheblak/ruuvitag-cloud-api/internal/middleware"
+	"github.com/niktheblak/ruuvitag-cloud-api/internal/server"
 )
 
 func main() {

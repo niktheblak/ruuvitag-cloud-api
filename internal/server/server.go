@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
+	"github.com/niktheblak/ruuvitag-cloud-api/internal/measurement"
 )
 
 type Server struct {
