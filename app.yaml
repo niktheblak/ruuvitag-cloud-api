@@ -1,4 +1,5 @@
 runtime: go113
+main: ./cmd/appengine
 handlers:
 - url: /.*
   script: auto
