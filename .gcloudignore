@@ -19,6 +19,7 @@ node_modules
 .idea
 
 deploy-receiver.sh
+deploy-appengine.sh
 Dockerfile
 LICENSE
 README.md

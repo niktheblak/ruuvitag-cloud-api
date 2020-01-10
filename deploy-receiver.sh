@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 gcloud functions deploy \
   receive_measurement \
