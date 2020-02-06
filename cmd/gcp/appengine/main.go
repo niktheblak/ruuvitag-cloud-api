@@ -9,8 +9,7 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/julienschmidt/httprouter"
-	"github.com/niktheblak/ruuvitag-cloud-api/internal/auth"
-	"github.com/niktheblak/ruuvitag-cloud-api/internal/measurement"
+	gcpauth "github.com/niktheblak/ruuvitag-cloud-api/internal/auth/gcp"
 	"github.com/niktheblak/ruuvitag-cloud-api/internal/middleware"
 	"github.com/niktheblak/ruuvitag-cloud-api/internal/server"
 )
@@ -33,9 +32,9 @@ func main() {
 	router.GET("/_ah/health", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		fmt.Fprintln(w, "OK")
 	})
-	meas := measurement.NewService(client)
+	meas := NewService(client)
 	srv := server.NewServer(meas)
-	authenticator := auth.NewFirestoreAuthenticator(client, "users")
+	authenticator := gcpauth.NewFirestoreAuthenticator(client, "users")
 	router.GET("/measurements/:name", middleware.Authenticator(srv.ListMeasurementsHandler, authenticator))
 	router.GET("/measurements/:name/:id", middleware.Authenticator(srv.GetMeasurementHandler, authenticator))
 	log.Printf("Listening on port %s", port)

@@ -5,67 +5,12 @@ import (
 	"errors"
 	"time"
 
-	"cloud.google.com/go/firestore"
-	"google.golang.org/api/iterator"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
 )
 
 var ErrNotFound = errors.New("measurement with given ID not found")
 
-type Service struct {
-	client *firestore.Client
-}
-
-func NewService(client *firestore.Client) *Service {
-	return &Service{
-		client: client,
-	}
-}
-
-func (s *Service) GetMeasurement(ctx context.Context, id string) (m Measurement, err error) {
-	r, err := s.client.Collection(Collection).Doc(id).Get(ctx)
-	if status.Code(err) == codes.NotFound {
-		err = ErrNotFound
-	}
-	if err != nil {
-		return
-	}
-	err = r.DataTo(&m)
-	m.ID = id
-	return
-}
-
-func (s *Service) ListMeasurements(ctx context.Context, name string, from, to time.Time, limit int) (measurements []Measurement, err error) {
-	coll := s.client.Collection(Collection)
-	query := coll.OrderBy("ts", firestore.Desc).Where("name", "==", name)
-	if !from.IsZero() {
-		query = query.Where("ts", ">=", from)
-	}
-	if !to.IsZero() {
-		query = query.Where("ts", "<", to)
-		if to.Sub(from) <= time.Hour*24 {
-			// Don't limit number of results if the query is for less than one day
-			limit = 0
-		}
-	}
-	if limit > 0 {
-		query = query.Limit(limit)
-	}
-	docs := query.Documents(ctx)
-	defer docs.Stop()
-	var doc *firestore.DocumentSnapshot
-	for doc, err = docs.Next(); err == nil; doc, err = docs.Next() {
-		var m Measurement
-		err = doc.DataTo(&m)
-		if err != nil {
-			return
-		}
-		m.ID = doc.Ref.ID
-		measurements = append(measurements, m)
-	}
-	if err == iterator.Done {
-		err = nil
-	}
-	return
+type Service interface {
+	GetMeasurement(ctx context.Context, id string) (sensor.Data, error)
+	ListMeasurements(ctx context.Context, name string, from, to time.Time, limit int) ([]sensor.Data, error)
 }

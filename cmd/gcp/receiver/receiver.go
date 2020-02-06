@@ -8,18 +8,19 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
-	"github.com/niktheblak/ruuvitag-cloud-api/internal/measurement"
+	fs "github.com/niktheblak/ruuvitag-cloud-api/cmd/gcp/firestore"
 )
 
 const (
 	TimeFormat = "2006-01-02T15:04:05.999999"
+	Collection = "measurements"
 )
 
 type PubSubMessage struct {
 	Data []byte `json:"data"`
 }
 
-type JSONMeasurement struct {
+type measurementPayload struct {
 	Name          string  `json:"name"`
 	MAC           string  `json:"mac"`
 	Timestamp     string  `json:"ts"`
@@ -32,16 +33,16 @@ type JSONMeasurement struct {
 	AccelerationZ int     `json:"acceleration_z"`
 }
 
-func (jm *JSONMeasurement) ToMeasurement() (*measurement.Measurement, error) {
+func (jm *measurementPayload) ToFirestoreMeasurement() (fs.Measurement, error) {
 	ts, err := time.Parse(time.RFC3339Nano, jm.Timestamp)
 	if err != nil {
 		ts, err = time.Parse(TimeFormat, jm.Timestamp)
 	}
 	if err != nil {
-		return nil, err
+		return fs.Measurement{}, err
 	}
 	ts = ts.UTC()
-	return &measurement.Measurement{
+	return fs.Measurement{
 		Name:          jm.Name,
 		MAC:           jm.MAC,
 		Timestamp:     ts,
@@ -59,8 +60,8 @@ func ReceiveMeasurement(ctx context.Context, msg PubSubMessage) error {
 	if len(msg.Data) == 0 {
 		return errors.New("message does not contain payload")
 	}
-	var jm JSONMeasurement
-	err := json.Unmarshal(msg.Data, &jm)
+	var mp measurementPayload
+	err := json.Unmarshal(msg.Data, &mp)
 	if err != nil {
 		log.Printf("Failed to parse measurement JSON: %v. Payload: %s", err, string(msg.Data))
 		return err
@@ -70,12 +71,12 @@ func ReceiveMeasurement(ctx context.Context, msg PubSubMessage) error {
 		log.Fatalf("Failed to create datastore client: %v", err)
 	}
 	defer client.Close()
-	m, err := jm.ToMeasurement()
+	m, err := mp.ToFirestoreMeasurement()
 	if err != nil {
 		log.Printf("Failed to convert measurement to stored entity: %v", err)
 		return err
 	}
-	_, _, err = client.Collection(measurement.Collection).Add(ctx, m)
+	_, _, err = client.Collection(Collection).Add(ctx, m)
 	if err != nil {
 		log.Printf("Failed to store measurement: %v", err)
 		return err

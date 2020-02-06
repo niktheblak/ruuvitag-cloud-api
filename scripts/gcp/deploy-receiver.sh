@@ -2,6 +2,7 @@
 
 gcloud functions deploy \
   receive_measurement \
+  --source ../../cmd/gcp/receiver \
   --entry-point ReceiveMeasurement \
   --runtime go113 \
   --trigger-resource ruuvitag-measurements \

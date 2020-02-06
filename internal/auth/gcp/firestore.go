@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/firestore"
+	"github.com/niktheblak/ruuvitag-cloud-api/internal/auth"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -17,7 +18,7 @@ type FirestoreAuthenticator struct {
 	collection string
 }
 
-func NewFirestoreAuthenticator(client *firestore.Client, collection string) Authenticator {
+func NewFirestoreAuthenticator(client *firestore.Client, collection string) auth.Authenticator {
 	return &FirestoreAuthenticator{
 		client:     client,
 		collection: collection,

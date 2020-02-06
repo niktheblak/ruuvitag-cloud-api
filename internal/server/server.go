@@ -14,10 +14,10 @@ import (
 )
 
 type Server struct {
-	meas *measurement.Service
+	meas measurement.Service
 }
 
-func NewServer(meas *measurement.Service) *Server {
+func NewServer(meas measurement.Service) *Server {
 	return &Server{
 		meas: meas,
 	}
