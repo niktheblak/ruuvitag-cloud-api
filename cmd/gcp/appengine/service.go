@@ -25,16 +25,20 @@ func NewService(client *firestore.Client) *Service {
 	}
 }
 
-func (s *Service) GetMeasurement(ctx context.Context, id string) (sensor.Data, error) {
-	r, err := s.client.Collection(Collection).Doc(id).Get(ctx)
+func (s *Service) GetMeasurement(ctx context.Context, name string, ts time.Time) (sensor.Data, error) {
+	coll := s.client.Collection(Collection)
+	query := coll.Where("name", "==", name).Where("ts", "==", ts).Limit(1)
+	docs := query.Documents(ctx)
+	defer docs.Stop()
+	doc, err := docs.Next()
 	if status.Code(err) == codes.NotFound {
 		err = measurement.ErrNotFound
 	}
 	if err != nil {
-		return sensor.Data{}, nil
+		return sensor.Data{}, err
 	}
 	var fm fs.Measurement
-	err = r.DataTo(&fm)
+	err = doc.DataTo(&fm)
 	return toSensorData(fm), nil
 }
 

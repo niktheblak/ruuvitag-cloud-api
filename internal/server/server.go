@@ -25,15 +25,20 @@ func NewServer(meas measurement.Service) *Server {
 
 func (s *Server) GetMeasurementHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	ctx := r.Context()
-	id := ps.ByName("id")
-	m, err := s.meas.GetMeasurement(ctx, id)
+	name := ps.ByName("name")
+	ts, err := time.Parse(time.RFC3339, ps.ByName("ts"))
+	if err != nil {
+		http.Error(w, "Invalid timestamp", http.StatusBadRequest)
+		return
+	}
+	m, err := s.meas.GetMeasurement(ctx, name, ts)
 	switch err {
 	case nil:
 	case measurement.ErrNotFound:
 		http.Error(w, "Measurement with given ID not found", http.StatusNotFound)
 		return
 	default:
-		log.Printf("Error while querying measurement %v: %v", id, err)
+		log.Printf("Error while querying measurement: %v", err)
 		http.Error(w, "Error while querying measurement", http.StatusInternalServerError)
 		return
 	}
