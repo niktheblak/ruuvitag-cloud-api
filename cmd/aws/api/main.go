@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/niktheblak/ruuvitag-cloud-api/internal/measurement"
 	"github.com/niktheblak/ruuvitag-cloud-api/internal/server"
 	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
 )
@@ -21,7 +22,10 @@ type Query struct {
 	Limit int    `json:"limit"`
 }
 
-var dyndb *dynamodb.DynamoDB
+var (
+	dyndb *dynamodb.DynamoDB
+	svc   measurement.Service
+)
 
 func init() {
 	log.Println("Creating session")
@@ -30,6 +34,11 @@ func init() {
 		log.Fatal(err)
 	}
 	dyndb = dynamodb.New(sess)
+	table := os.Getenv("TABLE")
+	if table == "" {
+		table = "ruuvitag"
+	}
+	svc = NewService(dyndb, table)
 }
 
 func HandleRequest(ctx context.Context, q Query) ([]sensor.Data, error) {
@@ -43,11 +52,6 @@ func HandleRequest(ctx context.Context, q Query) ([]sensor.Data, error) {
 	if q.Name == "" {
 		return nil, fmt.Errorf("name must be specified")
 	}
-	table := os.Getenv("TABLE")
-	if table == "" {
-		table = "ruuvitag"
-	}
-	meas := NewService(dyndb, table)
 	from, to, err := server.ParseTimeRange(q.From, q.To)
 	if err != nil {
 		return nil, err
@@ -55,7 +59,7 @@ func HandleRequest(ctx context.Context, q Query) ([]sensor.Data, error) {
 	if q.Limit <= 0 {
 		q.Limit = 20
 	}
-	return meas.ListMeasurements(ctx, q.Name, from, to, q.Limit)
+	return svc.ListMeasurements(ctx, q.Name, from, to, q.Limit)
 }
 
 func main() {
