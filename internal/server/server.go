@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/julienschmidt/httprouter"
@@ -53,7 +51,7 @@ func (s *Server) ListMeasurementsHandler(w http.ResponseWriter, r *http.Request,
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	limit := parseLimit(query)
+	limit := ParseLimit(query.Get("limit"))
 	measurements, err := s.meas.ListMeasurements(ctx, name, from, to, limit)
 	if err != nil {
 		log.Printf("Error while querying measurements: %v", err)
@@ -71,15 +69,4 @@ func writeJSON(w http.ResponseWriter, v interface{}) {
 	if err != nil {
 		log.Printf("Error while writing response: %v", err)
 	}
-}
-
-func parseLimit(query url.Values) int {
-	var limit int64
-	if query.Get("limit") != "" {
-		limit, _ = strconv.ParseInt(query.Get("limit"), 10, 64)
-	}
-	if limit <= 0 {
-		limit = 20
-	}
-	return int(limit)
 }

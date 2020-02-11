@@ -2,25 +2,20 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/niktheblak/ruuvitag-cloud-api/internal/measurement"
 	"github.com/niktheblak/ruuvitag-cloud-api/internal/server"
-	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
 )
-
-type Query struct {
-	Name  string `json:"name"`
-	From  string `json:"from"`
-	To    string `json:"to"`
-	Limit int    `json:"limit"`
-}
 
 var (
 	dyndb *dynamodb.DynamoDB
@@ -41,25 +36,29 @@ func init() {
 	svc = NewService(dyndb, table)
 }
 
-func HandleRequest(ctx context.Context, q Query) ([]sensor.Data, error) {
+func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	lc, ok := lambdacontext.FromContext(ctx)
 	if !ok {
-		return nil, fmt.Errorf("no context")
+		return events.APIGatewayProxyResponse{StatusCode: http.StatusInternalServerError}, fmt.Errorf("no context")
 	}
 	if lc.Identity.CognitoIdentityID == "" {
-		return nil, fmt.Errorf("unauthorized")
+		return events.APIGatewayProxyResponse{StatusCode: http.StatusForbidden}, nil
 	}
-	if q.Name == "" {
-		return nil, fmt.Errorf("name must be specified")
+	name := request.PathParameters["name"]
+	if name == "" {
+		return events.APIGatewayProxyResponse{Body: "Name must be specified", StatusCode: http.StatusBadRequest}, nil
 	}
-	from, to, err := server.ParseTimeRange(q.From, q.To)
+	from, to, err := server.ParseTimeRange(request.QueryStringParameters["from"], request.QueryStringParameters["to"])
 	if err != nil {
-		return nil, err
+		return events.APIGatewayProxyResponse{Body: "Invalid time range", StatusCode: http.StatusBadRequest}, nil
 	}
-	if q.Limit <= 0 {
-		q.Limit = 20
+	limit := server.ParseLimit(request.QueryStringParameters["limit"])
+	measurements, err := svc.ListMeasurements(ctx, name, from, to, limit)
+	if err != nil {
+		return events.APIGatewayProxyResponse{Body: "Failed to query measurements", StatusCode: http.StatusInternalServerError}, err
 	}
-	return svc.ListMeasurements(ctx, q.Name, from, to, q.Limit)
+	body, _ := json.Marshal(measurements)
+	return events.APIGatewayProxyResponse{Body: string(body), StatusCode: http.StatusOK}, nil
 }
 
 func main() {
