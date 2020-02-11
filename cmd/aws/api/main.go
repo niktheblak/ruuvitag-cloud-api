@@ -1,42 +1,61 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 
+	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/julienschmidt/httprouter"
 	"github.com/niktheblak/ruuvitag-cloud-api/internal/server"
+	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
 )
 
-func main() {
+type Query struct {
+	Name  string `json:"name"`
+	From  string `json:"from"`
+	To    string `json:"to"`
+	Limit int    `json:"limit"`
+}
+
+var dyndb *dynamodb.DynamoDB
+
+func init() {
+	log.Println("Creating session")
 	sess, err := session.NewSession()
 	if err != nil {
 		log.Fatal(err)
 	}
-	db := dynamodb.New(sess)
+	dyndb = dynamodb.New(sess)
+}
+
+func HandleRequest(ctx context.Context, q Query) ([]sensor.Data, error) {
+	lc, ok := lambdacontext.FromContext(ctx)
+	if !ok {
+		return nil, fmt.Errorf("no context")
+	}
+	if lc.Identity.CognitoIdentityID == "" {
+		return nil, fmt.Errorf("unauthorized")
+	}
+	if q.Name == "" {
+		return nil, fmt.Errorf("name must be specified")
+	}
 	table := os.Getenv("TABLE")
 	if table == "" {
-		table = "measurements"
+		table = "ruuvitag"
 	}
-	meas := NewService(db, table)
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	meas := NewService(dyndb, table)
+	from, to, err := server.ParseTimeRange(q.From, q.To)
+	if err != nil {
+		return nil, err
 	}
-	router := httprouter.New()
-	router.GET("/", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		fmt.Fprintln(w, "OK")
-	})
-	router.GET("/_ah/health", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		fmt.Fprintln(w, "OK")
-	})
-	srv := server.NewServer(meas)
-	router.GET("/measurements/:name", srv.ListMeasurementsHandler)
-	router.GET("/measurements/:name/:id", srv.GetMeasurementHandler)
-	log.Printf("Listening on port %s", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), router))
+	return meas.ListMeasurements(ctx, q.Name, from, to, q.Limit)
+}
+
+func main() {
+	log.Println("Starting service")
+	lambda.Start(HandleRequest)
 }
