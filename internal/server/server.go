@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -49,7 +48,7 @@ func (s *Server) ListMeasurementsHandler(w http.ResponseWriter, r *http.Request,
 	name := ps.ByName("name")
 	ctx := r.Context()
 	query := r.URL.Query()
-	from, to, err := parseTimeRange(query)
+	from, to, err := ParseTimeRange(query.Get("from"), query.Get("to"))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -72,31 +71,6 @@ func writeJSON(w http.ResponseWriter, v interface{}) {
 	if err != nil {
 		log.Printf("Error while writing response: %v", err)
 	}
-}
-
-func parseTimeRange(query url.Values) (from time.Time, to time.Time, err error) {
-	if query.Get("from") != "" {
-		from, err = time.Parse("2006-01-02", query.Get("from"))
-	}
-	if err != nil {
-		return
-	}
-	if query.Get("to") != "" {
-		to, err = time.Parse("2006-01-02", query.Get("to"))
-	}
-	if err != nil {
-		return
-	}
-	if !from.IsZero() && !to.IsZero() && from == to {
-		to = to.AddDate(0, 0, 1)
-	}
-	if to.IsZero() || to.After(time.Now()) {
-		to = time.Now().UTC()
-	}
-	if from.After(to) {
-		err = fmt.Errorf("from timestamp cannot be after to timestamp")
-	}
-	return
 }
 
 func parseLimit(query url.Values) int {
