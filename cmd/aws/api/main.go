@@ -52,6 +52,9 @@ func HandleRequest(ctx context.Context, q Query) ([]sensor.Data, error) {
 	if err != nil {
 		return nil, err
 	}
+	if q.Limit <= 0 {
+		q.Limit = 20
+	}
 	return meas.ListMeasurements(ctx, q.Name, from, to, q.Limit)
 }
 
