@@ -3,13 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/niktheblak/ruuvitag-cloud-api/internal/measurement"
@@ -36,13 +34,6 @@ func init() {
 }
 
 func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	lc, ok := lambdacontext.FromContext(ctx)
-	if !ok {
-		return internalServerError(), fmt.Errorf("no context")
-	}
-	if lc.Identity.CognitoIdentityID == "" {
-		return forbidden(), nil
-	}
 	name := request.PathParameters["name"]
 	if name == "" {
 		return badRequest("Name must be specified"), nil

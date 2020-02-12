@@ -18,10 +18,6 @@ func internalServerError(body ...string) events.APIGatewayProxyResponse {
 	return resp(http.StatusInternalServerError, body...)
 }
 
-func forbidden(body ...string) events.APIGatewayProxyResponse {
-	return resp(http.StatusForbidden, body...)
-}
-
 func resp(status int, body ...string) events.APIGatewayProxyResponse {
 	var respBody string
 	if len(body) > 0 {
