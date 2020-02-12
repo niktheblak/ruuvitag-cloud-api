@@ -55,7 +55,7 @@ func (s *Service) GetMeasurement(ctx context.Context, name string, ts time.Time)
 func (s *Service) ListMeasurements(ctx context.Context, name string, from, to time.Time, limit int) (measurements []sensor.Data, err error) {
 	res, err := s.client.QueryWithContext(ctx, &dynamodb.QueryInput{
 		ExpressionAttributeNames: map[string]*string{
-			"#name": aws.String("name"),
+			"#ts": aws.String("ts"),
 		},
 		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
 			":name": {
@@ -68,8 +68,8 @@ func (s *Service) ListMeasurements(ctx context.Context, name string, from, to ti
 				S: aws.String(to.Format(time.RFC3339)),
 			},
 		},
-		FilterExpression:       aws.String("#name = :name"),
-		KeyConditionExpression: aws.String("ts BETWEEN :from AND :to"),
+		FilterExpression:       aws.String("#ts BETWEEN :from AND :to"),
+		KeyConditionExpression: aws.String("name = :name"),
 		Limit:                  aws.Int64(int64(limit)),
 		ProjectionExpression:   nil,
 		ScanIndexForward:       nil,
