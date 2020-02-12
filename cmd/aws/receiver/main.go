@@ -27,7 +27,7 @@ func init() {
 	dyndb = dynamodb.New(sess)
 	table := os.Getenv("TABLE")
 	if table == "" {
-		table = "measurement"
+		log.Fatal("Environment variable TABLE must be specified")
 	}
 }
 

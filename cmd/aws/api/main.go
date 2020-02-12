@@ -28,7 +28,7 @@ func init() {
 	dyndb = dynamodb.New(sess)
 	table := os.Getenv("TABLE")
 	if table == "" {
-		table = "ruuvitag"
+		log.Fatal("Environment variable TABLE must be specified")
 	}
 	svc = NewService(dyndb, table)
 }
