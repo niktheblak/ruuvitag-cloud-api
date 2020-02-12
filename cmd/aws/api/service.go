@@ -66,7 +66,7 @@ func (s *Service) ListMeasurements(ctx context.Context, name string, from, to ti
 			},
 		},
 		FilterExpression:       aws.String("name = :name"),
-		KeyConditionExpression: aws.String("ts BETWEEN :t1 AND :t2"),
+		KeyConditionExpression: aws.String("ts BETWEEN :from AND :to"),
 		Limit:                  aws.Int64(int64(limit)),
 		ProjectionExpression:   nil,
 		ScanIndexForward:       nil,
