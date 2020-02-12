@@ -59,10 +59,10 @@ func (s *Service) ListMeasurements(ctx context.Context, name string, from, to ti
 				S: aws.String(name),
 			},
 			":from": {
-				S: aws.String(from.String()),
+				S: aws.String(from.Format(time.RFC3339)),
 			},
 			":to": {
-				S: aws.String(to.String()),
+				S: aws.String(to.Format(time.RFC3339)),
 			},
 		},
 		FilterExpression:       aws.String("name = :name"),
