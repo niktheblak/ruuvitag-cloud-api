@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -12,9 +13,10 @@ import (
 	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
 )
 
-const table = "ruuvitag"
-
-var dyndb *dynamodb.DynamoDB
+var (
+	table string
+	dyndb *dynamodb.DynamoDB
+)
 
 func init() {
 	log.Println("Creating session")
@@ -23,6 +25,10 @@ func init() {
 		log.Fatal(err)
 	}
 	dyndb = dynamodb.New(sess)
+	table := os.Getenv("TABLE")
+	if table == "" {
+		table = "measurement"
+	}
 }
 
 func HandleRequest(ctx context.Context, sd sensor.Data) error {
