@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -39,26 +38,26 @@ func init() {
 func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	lc, ok := lambdacontext.FromContext(ctx)
 	if !ok {
-		return events.APIGatewayProxyResponse{StatusCode: http.StatusInternalServerError}, fmt.Errorf("no context")
+		return internalServerError(), fmt.Errorf("no context")
 	}
 	if lc.Identity.CognitoIdentityID == "" {
-		return events.APIGatewayProxyResponse{StatusCode: http.StatusForbidden}, nil
+		return forbidden(), nil
 	}
 	name := request.PathParameters["name"]
 	if name == "" {
-		return events.APIGatewayProxyResponse{Body: "Name must be specified", StatusCode: http.StatusBadRequest}, nil
+		return badRequest("Name must be specified"), nil
 	}
 	from, to, err := server.ParseTimeRange(request.QueryStringParameters["from"], request.QueryStringParameters["to"])
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: "Invalid time range", StatusCode: http.StatusBadRequest}, nil
+		return badRequest("Invalid time range"), nil
 	}
 	limit := server.ParseLimit(request.QueryStringParameters["limit"])
 	measurements, err := svc.ListMeasurements(ctx, name, from, to, limit)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: "Failed to query measurements", StatusCode: http.StatusInternalServerError}, err
+		return internalServerError("Failed to query measurements"), err
 	}
 	body, _ := json.Marshal(measurements)
-	return events.APIGatewayProxyResponse{Body: string(body), StatusCode: http.StatusOK}, nil
+	return okResponse(string(body)), nil
 }
 
 func main() {
