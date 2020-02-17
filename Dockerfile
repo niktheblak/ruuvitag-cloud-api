@@ -4,7 +4,7 @@ WORKDIR /go/src/app
 ADD . /go/src/app
 
 RUN go get -d ./...
-RUN go build -o /go/bin/app cmd/aws/api/*.go
+RUN go build -o /go/bin/app cmd/api/*.go
 
 FROM gcr.io/distroless/base
 COPY --from=build-env /go/bin/app /
