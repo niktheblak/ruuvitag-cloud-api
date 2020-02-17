@@ -2,7 +2,7 @@
 
 set -e
 
-GOOS=linux go build -o receiver ../../cmd/aws/receiver/main.go
+GOOS=linux go build -o receiver ../cmd/receiver/main.go
 zip receiver.zip receiver
 
 set +e

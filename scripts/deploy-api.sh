@@ -2,7 +2,7 @@
 
 set -e
 
-GOOS=linux go build -o api ../../cmd/aws/api/*.go
+GOOS=linux go build -o api ../cmd/api/*.go
 zip api.zip api
 
 set +e
