@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/niktheblak/ruuvitag-cloud-api/internal/measurement"
+	"github.com/niktheblak/ruuvitag-cloud-api/internal/measurement/aws"
 	"github.com/niktheblak/ruuvitag-cloud-api/internal/server"
 )
 
@@ -30,7 +31,7 @@ func init() {
 	if table == "" {
 		log.Fatal("Environment variable TABLE must be specified")
 	}
-	svc = NewService(dyndb, table)
+	svc = aws.NewService(dyndb, table)
 }
 
 func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
