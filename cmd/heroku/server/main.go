@@ -6,9 +6,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/auth"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement/postgres"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/middleware"
 )
 
 func main() {
@@ -25,10 +28,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	tokens := strings.Split(os.Getenv("ALLOWED_TOKENS"), ",")
+	if len(tokens) == 0 {
+		log.Fatal("No allowed tokens")
+	}
+	a := &auth.StaticAuthenticator{
+		AllowedTokens: tokens,
+	}
 	router := httprouter.New()
 	srv := &Server{
 		Writer: writer,
 	}
-	router.POST("/receive", srv.Receive)
+	router.GET("/", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		fmt.Fprint(w, "OK")
+	})
+	router.POST("/receive", middleware.Authenticator(srv.Receive, a))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), router))
 }
