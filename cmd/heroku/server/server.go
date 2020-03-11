@@ -21,12 +21,12 @@ func (s *Server) Receive(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	var sd sensor.Data
 	err := dec.Decode(&sd)
 	if err != nil {
-		BadRequest(w, "Invalid measurement")
+		BadRequest(w, "Invalid measurement: bad JSON")
 		return
 	}
 	err = Validate(sd)
 	if err != nil {
-		BadRequest(w, err.Error())
+		BadRequest(w, "Invalid measurement: "+err.Error())
 		return
 	}
 	if sd.Timestamp.IsZero() {
