@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	_ "github.com/lib/pq"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
 	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
 )
