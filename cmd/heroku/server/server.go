@@ -48,28 +48,6 @@ func (s *Server) Receive(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	fmt.Fprint(w, "OK")
 }
 
-func (s *Server) GetMeasurement(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
-	name := params.ByName("name")
-	query := r.URL.Query()
-	ts, err := time.Parse(time.RFC3339Nano, query.Get("ts"))
-	if err != nil {
-		badRequest(w, err.Error())
-		return
-	}
-	m, err := s.svc.GetMeasurement(r.Context(), name, ts)
-	if err != nil {
-		internalServerError(w, err.Error())
-		return
-	}
-	jsonData, err := json.Marshal(m)
-	if err != nil {
-		internalServerError(w, err.Error())
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(jsonData)
-}
-
 func (s *Server) GetMeasurements(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	name := params.ByName("name")
 	query := r.URL.Query()
@@ -97,9 +75,13 @@ func (s *Server) GetMeasurements(w http.ResponseWriter, r *http.Request, params 
 	}
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
-	err = enc.Encode(map[string]interface{}{
-		"measurements": measurements,
-	})
+	if len(measurements) > 1 {
+		err = enc.Encode(map[string]interface{}{
+			"measurements": measurements,
+		})
+	} else {
+		err = enc.Encode(measurements[0])
+	}
 	if err != nil {
 		internalServerError(w, err.Error())
 		return
