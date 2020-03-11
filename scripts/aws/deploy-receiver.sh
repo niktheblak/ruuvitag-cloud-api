@@ -5,7 +5,7 @@ set -e
 pushd .
 
 cd ../..
-GOOS=linux go build -o receiver cmd/receiver/*.go
+GOOS=linux go build -o receiver cmd/aws/receiver/*.go
 zip receiver.zip receiver
 
 set +e

@@ -5,7 +5,7 @@ set -e
 pushd .
 
 cd ../..
-GOOS=linux go build -o api cmd/api/*.go
+GOOS=linux go build -o api cmd/aws/api/*.go
 zip api.zip api
 
 set +e
