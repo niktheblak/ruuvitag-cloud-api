@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/api"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement/aws"
 )
@@ -38,11 +39,11 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	if name == "" {
 		return BadRequest("Name must be specified"), nil
 	}
-	from, to, err := ParseTimeRange(request.QueryStringParameters["from"], request.QueryStringParameters["to"])
+	from, to, err := api.ParseTimeRange(request.QueryStringParameters["from"], request.QueryStringParameters["to"])
 	if err != nil {
 		return BadRequest("Invalid time range"), nil
 	}
-	limit := ParseLimit(request.QueryStringParameters["limit"])
+	limit := api.ParseLimit(request.QueryStringParameters["limit"])
 	measurements, err := svc.ListMeasurements(ctx, name, from, to, limit)
 	if err != nil {
 		return InternalServerError("Failed to query measurements"), err

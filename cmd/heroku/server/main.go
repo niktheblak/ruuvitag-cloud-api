@@ -24,7 +24,7 @@ func main() {
 		log.Fatal("$DATABASE_URL must be set")
 	}
 	ctx := context.Background()
-	writer, err := postgres.New(ctx, dbUrl, "measurements")
+	svc, err := postgres.New(ctx, dbUrl, "measurements")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,9 +36,7 @@ func main() {
 		AllowedTokens: tokens,
 	}
 	router := httprouter.New()
-	srv := &Server{
-		Writer: writer,
-	}
+	srv := NewServer(svc)
 	router.GET("/", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		fmt.Fprint(w, "OK")
 	})
