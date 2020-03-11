@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
@@ -20,16 +21,35 @@ func (s *Server) Receive(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	var sd sensor.Data
 	err := dec.Decode(&sd)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "Bad measurement")
+		badRequest(w)
 		return
+	}
+	if sd.Addr == "" {
+		badRequest(w)
+		return
+	}
+	if sd.Name == "" {
+		badRequest(w)
+		return
+	}
+	if sd.Timestamp.IsZero() {
+		sd.Timestamp = time.Now()
 	}
 	err = s.Writer.Write(r.Context(), sd)
 	if err != nil {
 		log.Print(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, "Could not write measurement")
+		response(w, http.StatusInternalServerError, "Cloud not write measurement")
 		return
 	}
 	fmt.Fprint(w, "OK")
+}
+
+func badRequest(w http.ResponseWriter) {
+	response(w, http.StatusBadRequest, "Bad request")
+}
+
+func response(w http.ResponseWriter, status int, message string) {
+	w.WriteHeader(status)
+	fmt.Fprint(w, message)
+	return
 }
