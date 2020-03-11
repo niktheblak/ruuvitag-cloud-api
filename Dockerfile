@@ -1,11 +1,21 @@
-FROM golang:1.14 as build-env
+FROM heroku/heroku:18-build as build
 
-WORKDIR /go/src/app
-ADD . /go/src/app
+COPY . /app
+WORKDIR /app
 
-RUN go get -d -v ./...
-RUN go build -o /go/bin/app cmd/api/*.go
+# Setup buildpack
+RUN mkdir -p /tmp/buildpack/heroku/go /tmp/build_cache /tmp/env
+RUN curl https://codon-buildpacks.s3.amazonaws.com/buildpacks/heroku/go.tgz | tar xz -C /tmp/buildpack/heroku/go
 
-FROM gcr.io/distroless/base-debian10
-COPY --from=build-env /go/bin/app /
-ENTRYPOINT ["/app"]
+#Execute Buildpack
+RUN STACK=heroku-18 /tmp/buildpack/heroku/go/bin/compile /app /tmp/build_cache /tmp/env
+
+# Prepare final, minimal image
+FROM heroku/heroku:18
+
+COPY --from=build /app /app
+ENV HOME /app
+WORKDIR /app
+RUN useradd -m heroku
+USER heroku
+CMD /app/bin/go-getting-started
