@@ -3,4 +3,4 @@ build:
     - go
 
 run:
-  web: server
+  web: ruuvitag-cloud-api

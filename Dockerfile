@@ -13,9 +13,9 @@ RUN STACK=heroku-18 /tmp/buildpack/heroku/go/bin/compile /app /tmp/build_cache /
 # Prepare final, minimal image
 FROM heroku/heroku:18
 
-COPY --from=build /app /app
+COPY --from=build /app/bin/server /app/bin/ruuvitag-cloud-api
 ENV HOME /app
 WORKDIR /app
 RUN useradd -m heroku
 USER heroku
-CMD /app/bin/server
+CMD /app/bin/ruuvitag-cloud-api
