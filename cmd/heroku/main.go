@@ -16,8 +16,12 @@ func main() {
 	if port == "" {
 		log.Fatal("$PORT must be set")
 	}
+	dbUrl := os.Getenv("DATABASE_URL")
+	if dbUrl == "" {
+		log.Fatal("$DATABASE_URL must be set")
+	}
 	ctx := context.Background()
-	writer, err := postgres.New(ctx, "", "measurements")
+	writer, err := postgres.New(ctx, dbUrl, "measurements")
 	if err != nil {
 		log.Fatal(err)
 	}
