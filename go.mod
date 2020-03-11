@@ -1,3 +1,6 @@
+// +heroku goVersion go1.14
+// +heroku install ./cmd/heroku/...
+
 module github.com/niktheblak/ruuvitag-cloud-api
 
 go 1.14

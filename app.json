@@ -1,0 +1,12 @@
+{
+  "name": "RuuviTag Cloud API",
+  "description": "Receiver and REST API for RuuviTag measurements",
+  "keywords": [
+    "ruuvitag",
+    "go",
+    "postgres",
+    "rest"
+  ],
+  "website": "http://github.com/niktheblak/ruuvitag-cloud-api",
+  "repository": "http://github.com/niktheblak/ruuvitag-cloud-api"
+}
