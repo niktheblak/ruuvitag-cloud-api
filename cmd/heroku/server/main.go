@@ -32,7 +32,7 @@ func main() {
 	if len(tokens) == 0 {
 		log.Fatal("No allowed tokens")
 	}
-	a := &auth.StaticAuthenticator{
+	authenticator := &auth.StaticAuthenticator{
 		AllowedTokens: tokens,
 	}
 	router := httprouter.New()
@@ -40,6 +40,7 @@ func main() {
 	router.GET("/", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		fmt.Fprint(w, "OK")
 	})
-	router.POST("/receive", middleware.Authenticator(srv.Receive, a))
+	router.GET("/measurements/:name", middleware.Authenticator(srv.GetMeasurements, authenticator))
+	router.POST("/receive", middleware.Authenticator(srv.Receive, authenticator))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), router))
 }

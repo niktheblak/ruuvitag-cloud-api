@@ -51,7 +51,7 @@ func (s *Server) Receive(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 func (s *Server) GetMeasurement(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	name := params.ByName("name")
 	query := r.URL.Query()
-	ts, err := time.Parse("", query.Get("ts"))
+	ts, err := time.Parse(time.RFC3339Nano, query.Get("ts"))
 	if err != nil {
 		badRequest(w, err.Error())
 		return
@@ -70,7 +70,7 @@ func (s *Server) GetMeasurement(w http.ResponseWriter, r *http.Request, params h
 	w.Write(jsonData)
 }
 
-func (s *Server) ListMeasurements(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func (s *Server) GetMeasurements(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	name := params.ByName("name")
 	query := r.URL.Query()
 	from, to, err := api.ParseTimeRange(query.Get("from"), query.Get("to"))
@@ -79,14 +79,27 @@ func (s *Server) ListMeasurements(w http.ResponseWriter, r *http.Request, params
 		return
 	}
 	limit := api.ParseLimit(query.Get("limit"))
-	measurements, err := s.svc.ListMeasurements(r.Context(), name, from, to, limit)
+	var measurements []sensor.Data
+	if query.Get("ts") != "" {
+		ts, err := time.Parse(time.RFC3339Nano, query.Get("ts"))
+		if err != nil {
+			badRequest(w, err.Error())
+			return
+		}
+		m, err := s.svc.GetMeasurement(r.Context(), name, ts)
+		measurements = append(measurements, m)
+	} else {
+		measurements, err = s.svc.ListMeasurements(r.Context(), name, from, to, limit)
+	}
 	if err != nil {
 		internalServerError(w, err.Error())
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	enc := json.NewEncoder(w)
-	err = enc.Encode(measurements)
+	err = enc.Encode(map[string]interface{}{
+		"measurements": measurements,
+	})
 	if err != nil {
 		internalServerError(w, err.Error())
 		return
