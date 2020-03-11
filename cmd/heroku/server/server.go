@@ -21,15 +21,12 @@ func (s *Server) Receive(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	var sd sensor.Data
 	err := dec.Decode(&sd)
 	if err != nil {
-		badRequest(w)
+		BadRequest(w, "Invalid measurement")
 		return
 	}
-	if sd.Addr == "" {
-		badRequest(w)
-		return
-	}
-	if sd.Name == "" {
-		badRequest(w)
+	err = Validate(sd)
+	if err != nil {
+		BadRequest(w, err.Error())
 		return
 	}
 	if sd.Timestamp.IsZero() {
@@ -38,17 +35,30 @@ func (s *Server) Receive(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	err = s.Writer.Write(r.Context(), sd)
 	if err != nil {
 		log.Print(err)
-		response(w, http.StatusInternalServerError, "Cloud not write measurement")
+		Response(w, http.StatusInternalServerError, "Cloud not write measurement")
 		return
 	}
 	fmt.Fprint(w, "OK")
 }
 
-func badRequest(w http.ResponseWriter) {
-	response(w, http.StatusBadRequest, "Bad request")
+func Validate(sd sensor.Data) error {
+	if sd.Addr == "" {
+		return fmt.Errorf("empty address")
+	}
+	if sd.Name == "" {
+		return fmt.Errorf("empty name")
+	}
+	if sd.Temperature == 0 && sd.Humidity == 0 && sd.Pressure == 0 {
+		return fmt.Errorf("all main readings are zero")
+	}
+	return nil
 }
 
-func response(w http.ResponseWriter, status int, message string) {
+func BadRequest(w http.ResponseWriter, message string) {
+	Response(w, http.StatusBadRequest, message)
+}
+
+func Response(w http.ResponseWriter, status int, message string) {
 	w.WriteHeader(status)
 	fmt.Fprint(w, message)
 	return
