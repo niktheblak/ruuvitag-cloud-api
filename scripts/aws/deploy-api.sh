@@ -2,12 +2,15 @@
 
 set -e
 
-GOOS=linux go build -o api ../cmd/api/*.go
+pushd .
+
+cd ../..
+GOOS=linux go build -o api cmd/api/*.go
 zip api.zip api
 
 set +e
 
-source api.env
+source scripts/aws/api.env
 
 if [[ -z "${FUNCTION_NAME}" ]]; then
   FUNCTION_NAME=api
@@ -28,3 +31,5 @@ else
 fi
 
 rm api api.zip
+
+popd

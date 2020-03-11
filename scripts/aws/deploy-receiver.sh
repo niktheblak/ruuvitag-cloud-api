@@ -2,12 +2,15 @@
 
 set -e
 
-GOOS=linux go build -o receiver ../cmd/receiver/main.go
+pushd .
+
+cd ../..
+GOOS=linux go build -o receiver cmd/receiver/*.go
 zip receiver.zip receiver
 
 set +e
 
-source receiver.env
+source scripts/aws/receiver.env
 
 if [[ -z "${FUNCTION_NAME}" ]]; then
   FUNCTION_NAME=receiver
@@ -28,3 +31,5 @@ else
 fi
 
 rm receiver receiver.zip
+
+popd

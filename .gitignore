@@ -24,3 +24,5 @@
 
 .env.yaml
 scripts/*.env
+
+bin
