@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS measurements (
     acceleration_y INTEGER NOT NULL,
     acceleration_z INTEGER NOT NULL,
     movement_counter INTEGER NOT NULL,
-    battery INTEGER NOT NULL
+    battery_voltage REAL NOT NULL
 );

@@ -33,7 +33,7 @@ func New(ctx context.Context, connStr, table string) (measurement.WriterService,
   			acceleration_y,
   			acceleration_z,
   			movement_counter,
-  			battery
+  			battery_voltage
 		FROM %s
 		WHERE name = $1 AND ts = $2
 		LIMIT 1
@@ -52,7 +52,7 @@ func New(ctx context.Context, connStr, table string) (measurement.WriterService,
   			acceleration_y,
   			acceleration_z,
   			movement_counter,
-  			battery
+  			battery_voltage
 		FROM %s
 		WHERE name = $1 AND ts >= $2 AND ts <= $3
 		ORDER BY ts DESC
@@ -73,7 +73,7 @@ func New(ctx context.Context, connStr, table string) (measurement.WriterService,
   			acceleration_y,
   			acceleration_z,
   			movement_counter,
-  			battery
+  			battery_voltage
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`, table))
 	if err != nil {
@@ -89,7 +89,7 @@ func New(ctx context.Context, connStr, table string) (measurement.WriterService,
 
 func (p *postgresService) GetMeasurement(ctx context.Context, name string, ts time.Time) (sd sensor.Data, err error) {
 	row := p.getStmt.QueryRowContext(ctx, name, ts)
-	err = row.Scan(&sd.Addr, &sd.Temperature, &sd.Humidity, &sd.Pressure, &sd.AccelerationX, &sd.AccelerationY, &sd.AccelerationZ, &sd.MovementCounter, &sd.Battery)
+	err = row.Scan(&sd.Addr, &sd.Temperature, &sd.Humidity, &sd.Pressure, &sd.AccelerationX, &sd.AccelerationY, &sd.AccelerationZ, &sd.MovementCounter, &sd.BatteryVoltage)
 	if err == sql.ErrNoRows {
 		err = measurement.ErrNotFound
 	}
@@ -107,7 +107,7 @@ func (p *postgresService) ListMeasurements(ctx context.Context, name string, fro
 	var measurements []sensor.Data
 	for rows.Next() {
 		var sd sensor.Data
-		err = rows.Scan(&sd.Addr, &sd.Timestamp, &sd.Temperature, &sd.Humidity, &sd.Pressure, &sd.AccelerationX, &sd.AccelerationY, &sd.AccelerationZ, &sd.MovementCounter, &sd.Battery)
+		err = rows.Scan(&sd.Addr, &sd.Timestamp, &sd.Temperature, &sd.Humidity, &sd.Pressure, &sd.AccelerationX, &sd.AccelerationY, &sd.AccelerationZ, &sd.MovementCounter, &sd.BatteryVoltage)
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +118,7 @@ func (p *postgresService) ListMeasurements(ctx context.Context, name string, fro
 }
 
 func (p *postgresService) Write(ctx context.Context, data sensor.Data) error {
-	_, err := p.insertStmt.ExecContext(ctx, data.Addr, data.Name, data.Timestamp, data.Temperature, data.Humidity, data.Pressure, data.AccelerationX, data.AccelerationY, data.AccelerationZ, data.MovementCounter, data.Battery)
+	_, err := p.insertStmt.ExecContext(ctx, data.Addr, data.Name, data.Timestamp, data.Temperature, data.Humidity, data.Pressure, data.AccelerationX, data.AccelerationY, data.AccelerationZ, data.MovementCounter, data.BatteryVoltage)
 	return err
 }
 
