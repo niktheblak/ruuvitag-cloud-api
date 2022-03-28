@@ -3,7 +3,7 @@
 
 module github.com/niktheblak/ruuvitag-cloud-api
 
-go 1.8
+go 1.7
 
 require (
 	github.com/aws/aws-lambda-go v1.28.0
