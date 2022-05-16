@@ -1,21 +1,12 @@
-FROM heroku/heroku:20-build as build
+FROM golang:1.18 as build
 
-COPY . /app
-WORKDIR /app
+WORKDIR /go/src/app
+ADD . /go/src/app
 
-# Setup buildpack
-RUN mkdir -p /tmp/buildpack/heroku/go /tmp/build_cache /tmp/env
-RUN curl https://buildpack-registry.s3.amazonaws.com/buildpacks/heroku/go.tgz | tar xz -C /tmp/buildpack/heroku/go
+RUN go get -d -v ./...
 
-#Execute Buildpack
-RUN STACK=heroku-20 /tmp/buildpack/heroku/go/bin/compile /app /tmp/build_cache /tmp/env
+RUN go build -o /go/bin/app
 
-# Prepare final, minimal image
-FROM heroku/heroku:20
-
-COPY --from=build /app/bin/server /app/bin/ruuvitag-cloud-api
-ENV HOME /app
-WORKDIR /app
-RUN useradd -m heroku
-USER heroku
-CMD /app/bin/server
+FROM gcr.io/distroless/base-debian11
+COPY --from=build /go/bin/app /
+CMD ["/app"]
