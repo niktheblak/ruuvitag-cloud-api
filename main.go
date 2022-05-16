@@ -9,9 +9,11 @@ import (
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
+
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/auth"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement/postgres"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/middleware"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/server"
 )
 
 func main() {
@@ -36,7 +38,7 @@ func main() {
 		AllowedTokens: tokens,
 	}
 	router := httprouter.New()
-	srv := NewServer(svc)
+	srv := server.NewServer(svc)
 	router.GET("/", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		fmt.Fprint(w, "OK")
 	})

@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"encoding/json"
@@ -8,9 +8,10 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
+
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/api"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
-	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
 )
 
 type Server struct {
