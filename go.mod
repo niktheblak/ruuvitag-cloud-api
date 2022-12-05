@@ -1,6 +1,6 @@
 module github.com/niktheblak/ruuvitag-cloud-api
 
-go 1.8
+go 1.19
 
 require (
 	github.com/aws/aws-lambda-go v1.31.1
@@ -9,3 +9,5 @@ require (
 	github.com/lib/pq v1.10.5
 	github.com/niktheblak/ruuvitag-gollector v0.0.0-20220422062314-7f64f0d7f21a
 )
+
+require github.com/jmespath/go-jmespath v0.4.0 // indirect
