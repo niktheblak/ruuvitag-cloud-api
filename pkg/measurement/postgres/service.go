@@ -1,3 +1,5 @@
+//go:build postgres
+
 package postgres
 
 import (
@@ -7,18 +9,19 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
-	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
+
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/errs"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/sensor"
 )
 
-type postgresService struct {
+type Service struct {
 	db         *sql.DB
 	getStmt    *sql.Stmt
 	listStmt   *sql.Stmt
 	insertStmt *sql.Stmt
 }
 
-func New(ctx context.Context, connStr, table string) (measurement.WriterService, error) {
+func New(ctx context.Context, connStr, table string) (*Service, error) {
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
@@ -79,7 +82,7 @@ func New(ctx context.Context, connStr, table string) (measurement.WriterService,
 	if err != nil {
 		return nil, err
 	}
-	return &postgresService{
+	return &Service{
 		db:         db,
 		getStmt:    getStmt,
 		listStmt:   listStmt,
@@ -87,19 +90,19 @@ func New(ctx context.Context, connStr, table string) (measurement.WriterService,
 	}, nil
 }
 
-func (p *postgresService) GetMeasurement(ctx context.Context, name string, ts time.Time) (sd sensor.Data, err error) {
-	row := p.getStmt.QueryRowContext(ctx, name, ts)
+func (s *Service) GetMeasurement(ctx context.Context, name string, ts time.Time) (sd sensor.Data, err error) {
+	row := s.getStmt.QueryRowContext(ctx, name, ts)
 	err = row.Scan(&sd.Addr, &sd.Temperature, &sd.Humidity, &sd.Pressure, &sd.AccelerationX, &sd.AccelerationY, &sd.AccelerationZ, &sd.MovementCounter, &sd.BatteryVoltage)
 	if err == sql.ErrNoRows {
-		err = measurement.ErrNotFound
+		err = errs.ErrNotFound
 	}
 	sd.Name = name
 	sd.Timestamp = ts
 	return
 }
 
-func (p *postgresService) ListMeasurements(ctx context.Context, name string, from, to time.Time, limit int) ([]sensor.Data, error) {
-	rows, err := p.listStmt.QueryContext(ctx, name, from, to, limit)
+func (s *Service) ListMeasurements(ctx context.Context, name string, from, to time.Time, limit int) ([]sensor.Data, error) {
+	rows, err := s.listStmt.QueryContext(ctx, name, from, to, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -117,14 +120,14 @@ func (p *postgresService) ListMeasurements(ctx context.Context, name string, fro
 	return measurements, rows.Err()
 }
 
-func (p *postgresService) Write(ctx context.Context, data sensor.Data) error {
-	_, err := p.insertStmt.ExecContext(ctx, data.Addr, data.Name, data.Timestamp, data.Temperature, data.Humidity, data.Pressure, data.AccelerationX, data.AccelerationY, data.AccelerationZ, data.MovementCounter, data.BatteryVoltage)
+func (s *Service) Write(ctx context.Context, data sensor.Data) error {
+	_, err := s.insertStmt.ExecContext(ctx, data.Addr, data.Name, data.Timestamp, data.Temperature, data.Humidity, data.Pressure, data.AccelerationX, data.AccelerationY, data.AccelerationZ, data.MovementCounter, data.BatteryVoltage)
 	return err
 }
 
-func (p *postgresService) Close() error {
-	p.getStmt.Close()
-	p.listStmt.Close()
-	p.insertStmt.Close()
-	return p.db.Close()
+func (s *Service) Close() error {
+	s.getStmt.Close()
+	s.listStmt.Close()
+	s.insertStmt.Close()
+	return s.db.Close()
 }

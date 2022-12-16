@@ -8,30 +8,24 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/api"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement/aws"
 )
 
-var (
-	dyndb *dynamodb.DynamoDB
-	svc   measurement.Service
-)
+var svc measurement.Service
 
 func init() {
-	log.Println("Creating session")
-	sess, err := session.NewSession()
-	if err != nil {
-		log.Fatal(err)
-	}
-	dyndb = dynamodb.New(sess)
 	table := os.Getenv("TABLE")
 	if table == "" {
 		log.Fatal("Environment variable TABLE must be specified")
 	}
-	svc = aws.NewService(dyndb, table)
+	var err error
+	svc, err = aws.New(table)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {

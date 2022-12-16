@@ -1,3 +1,5 @@
+//go:build aws
+
 package aws
 
 import (
@@ -5,10 +7,12 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
-	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
+
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/errs"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/sensor"
 )
 
 type key struct {
@@ -21,11 +25,16 @@ type Service struct {
 	table  string
 }
 
-func NewService(client *dynamodb.DynamoDB, table string) measurement.Service {
+func New(table string) (*Service, error) {
+	sess, err := session.NewSession()
+	if err != nil {
+		return nil, err
+	}
+	client := dynamodb.New(sess)
 	return &Service{
 		client: client,
 		table:  table,
-	}
+	}, nil
 }
 
 func (s *Service) GetMeasurement(ctx context.Context, name string, ts time.Time) (sd sensor.Data, err error) {
@@ -45,7 +54,7 @@ func (s *Service) GetMeasurement(ctx context.Context, name string, ts time.Time)
 		return
 	}
 	if res == nil {
-		err = measurement.ErrNotFound
+		err = errs.ErrNotFound
 		return
 	}
 	err = dynamodbattribute.UnmarshalMap(res.Item, &sd)
@@ -88,4 +97,16 @@ func (s *Service) ListMeasurements(ctx context.Context, name string, from, to ti
 		measurements = append(measurements, sd)
 	}
 	return
+}
+
+func (s *Service) Write(ctx context.Context, sd sensor.Data) error {
+	item, err := dynamodbattribute.MarshalMap(sd)
+	if err != nil {
+		return err
+	}
+	_, err = s.client.PutItemWithContext(ctx, &dynamodb.PutItemInput{
+		Item:      item,
+		TableName: aws.String(s.table),
+	})
+	return err
 }

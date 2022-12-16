@@ -6,9 +6,10 @@ import (
 	"os"
 
 	"github.com/aws/aws-lambda-go/lambda"
+
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement/aws"
-	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/sensor"
 )
 
 var (

@@ -2,15 +2,13 @@ package measurement
 
 import (
 	"context"
-	"errors"
 	"time"
 
-	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/sensor"
 )
-
-var ErrNotFound = errors.New("measurement with given ID not found")
 
 type Service interface {
 	GetMeasurement(ctx context.Context, name string, ts time.Time) (sensor.Data, error)
 	ListMeasurements(ctx context.Context, name string, from, to time.Time, limit int) ([]sensor.Data, error)
+	Write(ctx context.Context, sd sensor.Data) error
 }

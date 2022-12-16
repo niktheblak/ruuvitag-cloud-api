@@ -8,17 +8,17 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/niktheblak/ruuvitag-gollector/pkg/sensor"
 
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/api"
 	"github.com/niktheblak/ruuvitag-cloud-api/pkg/measurement"
+	"github.com/niktheblak/ruuvitag-cloud-api/pkg/sensor"
 )
 
 type Server struct {
-	svc measurement.WriterService
+	svc measurement.Service
 }
 
-func NewServer(svc measurement.WriterService) *Server {
+func NewServer(svc measurement.Service) *Server {
 	return &Server{
 		svc: svc,
 	}
@@ -46,7 +46,9 @@ func (s *Server) Receive(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		response(w, http.StatusInternalServerError, "Cloud not write measurement")
 		return
 	}
-	fmt.Fprint(w, "OK")
+	if _, err := fmt.Fprint(w, "OK"); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (s *Server) GetMeasurements(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
@@ -112,6 +114,8 @@ func internalServerError(w http.ResponseWriter, message string) {
 
 func response(w http.ResponseWriter, status int, message string) {
 	w.WriteHeader(status)
-	fmt.Fprint(w, message)
+	if _, err := fmt.Fprint(w, message); err != nil {
+		log.Fatal(err)
+	}
 	return
 }
