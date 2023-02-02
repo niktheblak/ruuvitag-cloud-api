@@ -2,10 +2,7 @@ package auth
 
 import (
 	"context"
-	"errors"
 )
-
-var ErrNotAuthorized = errors.New("not authorized")
 
 type StaticAuthenticator struct {
 	AllowedTokens []string
@@ -18,4 +15,10 @@ func (a *StaticAuthenticator) Authenticate(ctx context.Context, token string) er
 		}
 	}
 	return ErrNotAuthorized
+}
+
+func Static(tokens ...string) *StaticAuthenticator {
+	return &StaticAuthenticator{
+		AllowedTokens: tokens,
+	}
 }

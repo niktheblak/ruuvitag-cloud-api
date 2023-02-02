@@ -19,23 +19,29 @@ import (
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		log.Fatal("$PORT must be set")
+		port = "8080"
 	}
-	dbUrl := os.Getenv("DATABASE_URL")
-	if dbUrl == "" {
-		log.Fatal("$DATABASE_URL must be set")
+	connStr := os.Getenv("DATABASE_URL")
+	if connStr == "" {
+		connStr = "postgres://127.0.0.1/ruuvitag"
+	}
+	table := os.Getenv("DATABASE_TABLE")
+	if table == "" {
+		table = "measurements"
 	}
 	ctx := context.Background()
-	svc, err := postgres.New(ctx, dbUrl, "measurements")
+	svc, err := postgres.New(ctx, connStr, table)
 	if err != nil {
 		log.Fatal(err)
 	}
 	tokens := strings.Split(os.Getenv("ALLOWED_TOKENS"), ",")
-	if len(tokens) == 0 {
-		log.Fatal("No allowed tokens")
-	}
-	authenticator := &auth.StaticAuthenticator{
-		AllowedTokens: tokens,
+	var authenticator auth.Authenticator
+	if len(tokens) > 0 {
+		log.Printf("Authorized %d tokens", len(tokens))
+		authenticator = auth.Static(tokens...)
+	} else {
+		log.Println("Allowing all tokens")
+		authenticator = auth.AlwaysAllow()
 	}
 	router := httprouter.New()
 	srv := server.NewServer(svc)
