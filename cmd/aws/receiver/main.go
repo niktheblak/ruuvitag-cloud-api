@@ -13,16 +13,20 @@ import (
 )
 
 var (
-	writer measurement.Writer
+	writer measurement.Service
 )
 
 func init() {
 	table := os.Getenv("TABLE")
 	if table == "" {
-		log.Fatal("Environment variable TABLE must be specified")
+		log.Fatal("$TABLE must be specified")
 	}
 	log.Println("Creating session")
-	writer = aws.NewDynamoDBWriter(table)
+	var err error
+	writer, err = aws.New(table)
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
 
 func HandleRequest(ctx context.Context, sd sensor.Data) error {
