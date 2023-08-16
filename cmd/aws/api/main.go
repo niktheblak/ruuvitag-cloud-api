@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"log/slog"
 	"os"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -47,6 +48,6 @@ func HandleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 }
 
 func main() {
-	log.Println("Starting service")
+	slog.Info("Starting service")
 	lambda.Start(HandleRequest)
 }

@@ -3,7 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -15,12 +15,17 @@ import (
 )
 
 type Server struct {
-	svc measurement.Service
+	svc    measurement.Service
+	logger *slog.Logger
 }
 
-func NewServer(svc measurement.Service) *Server {
+func NewServer(svc measurement.Service, logger *slog.Logger) *Server {
+	if logger == nil {
+		logger = slog.Default()
+	}
 	return &Server{
-		svc: svc,
+		svc:    svc,
+		logger: logger,
 	}
 }
 
@@ -40,14 +45,15 @@ func (s *Server) Receive(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 	if sd.Timestamp.IsZero() {
 		sd.Timestamp = time.Now()
 	}
+	s.logger.Debug("Received measurement", "measurement", sd)
 	err = s.svc.Write(r.Context(), sd)
 	if err != nil {
-		log.Print(err)
+		s.logger.Error("Error while writing measurement", "error", err)
 		response(w, http.StatusInternalServerError, "Cloud not write measurement")
 		return
 	}
 	if _, err := fmt.Fprint(w, "OK"); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }
 
@@ -56,7 +62,8 @@ func (s *Server) GetMeasurements(w http.ResponseWriter, r *http.Request, params 
 	query := r.URL.Query()
 	from, to, err := api.ParseTimeRange(query.Get("from"), query.Get("to"))
 	if err != nil {
-		badRequest(w, err.Error())
+		s.logger.Warn("Invalid time range", "from", query.Get("from"), "to", query.Get("to"), "error", err)
+		badRequest(w, "Invalid time range")
 		return
 	}
 	limit := api.ParseLimit(query.Get("limit"))
@@ -64,7 +71,8 @@ func (s *Server) GetMeasurements(w http.ResponseWriter, r *http.Request, params 
 	if query.Get("ts") != "" {
 		ts, err := time.Parse(time.RFC3339Nano, query.Get("ts"))
 		if err != nil {
-			badRequest(w, err.Error())
+			s.logger.Warn("Invalid timestamp", "timestamp", query.Get("ts"), "error", err)
+			badRequest(w, "Invalid timestamp")
 			return
 		}
 		m, err := s.svc.GetMeasurement(r.Context(), name, ts)
@@ -73,7 +81,8 @@ func (s *Server) GetMeasurements(w http.ResponseWriter, r *http.Request, params 
 		measurements, err = s.svc.ListMeasurements(r.Context(), name, from, to, limit)
 	}
 	if err != nil {
-		internalServerError(w, err.Error())
+		s.logger.Error("Error while reading measurements", "error", err)
+		internalServerError(w, "Error while reading measurements")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -86,8 +95,7 @@ func (s *Server) GetMeasurements(w http.ResponseWriter, r *http.Request, params 
 		err = enc.Encode(measurements[0])
 	}
 	if err != nil {
-		internalServerError(w, err.Error())
-		return
+		panic(err)
 	}
 }
 
@@ -115,7 +123,7 @@ func internalServerError(w http.ResponseWriter, message string) {
 func response(w http.ResponseWriter, status int, message string) {
 	w.WriteHeader(status)
 	if _, err := fmt.Fprint(w, message); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	return
 }

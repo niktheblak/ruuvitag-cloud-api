@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"os"
 
 	"github.com/aws/aws-lambda-go/lambda"
@@ -30,11 +31,11 @@ func init() {
 }
 
 func HandleRequest(ctx context.Context, sd sensor.Data) error {
-	log.Printf("Received measurement from %v", sd.Addr)
+	slog.Info("Received measurement", "addr", sd.Addr, "measurement", sd)
 	return writer.Write(ctx, sd)
 }
 
 func main() {
-	log.Println("Starting writer")
+	slog.Info("Starting writer")
 	lambda.Start(HandleRequest)
 }

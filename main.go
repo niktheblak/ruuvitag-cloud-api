@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -37,16 +38,18 @@ func main() {
 	tokens := strings.Split(os.Getenv("ALLOWED_TOKENS"), ",")
 	var authenticator auth.Authenticator
 	if len(tokens) > 0 {
-		log.Printf("Authorized %d tokens", len(tokens))
+		slog.Info("Authorized tokens", "count", len(tokens))
 		authenticator = auth.Static(tokens...)
 	} else {
-		log.Println("Allowing all tokens")
+		slog.Info("Allowing all tokens")
 		authenticator = auth.AlwaysAllow()
 	}
 	router := httprouter.New()
-	srv := server.NewServer(svc)
+	srv := server.NewServer(svc, slog.Default())
 	router.GET("/", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		fmt.Fprint(w, "OK")
+		if _, err := fmt.Fprint(w, "OK"); err != nil {
+			log.Fatal(err)
+		}
 	})
 	router.GET("/measurements/:name", middleware.Authenticator(srv.GetMeasurements, authenticator))
 	router.POST("/receive", middleware.Authenticator(srv.Receive, authenticator))
