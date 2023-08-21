@@ -7,6 +7,6 @@ RUN go get -d -v ./...
 
 RUN go build -tags aws,postgres -o /go/bin/app
 
-FROM gcr.io/distroless/base-debian11
+FROM ubuntu:latest
 COPY --from=build /go/bin/app /
 CMD ["/app"]
