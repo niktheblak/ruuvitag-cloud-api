@@ -11,5 +11,3 @@ require (
 )
 
 require github.com/jmespath/go-jmespath v0.4.0 // indirect
-
-replace github.com/niktheblak/ruuvitag-cloud-api/common => ../common

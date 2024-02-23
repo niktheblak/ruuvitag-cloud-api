@@ -9,5 +9,3 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/niktheblak/ruuvitag-cloud-api/common v1.0.0
 )
-
-replace github.com/niktheblak/ruuvitag-cloud-api/common => ../common
