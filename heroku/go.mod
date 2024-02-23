@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/bigquery v1.59.1
 	github.com/GoogleCloudPlatform/functions-framework-go v1.8.1
 	github.com/aws/aws-lambda-go v1.46.0
-	github.com/aws/aws-sdk-go v1.50.23
+	github.com/aws/aws-sdk-go v1.50.24
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/lib/pq v1.10.9
 	google.golang.org/api v0.166.0
