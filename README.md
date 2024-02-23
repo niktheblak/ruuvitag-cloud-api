@@ -7,8 +7,5 @@ Measurement receiver and server implementations for AWS can be found from the `a
 ## Google Cloud Platform
 Measurement receiver and server implementations for GCP can be found from the `gcp/` directory.
 
-## Heroku
-Measurement receiver and server implementations for Heroku (using PostgreSQL) can be found from the `heroku/` directory.
-
 ## Local PostgreSQL
 Measurement receiver and server implementations for running locally with a PostgreSQL database can be found from the `postgres/` directory.
