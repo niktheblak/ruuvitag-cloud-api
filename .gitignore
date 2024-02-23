@@ -22,7 +22,5 @@
 
 # End of https://www.gitignore.io/api/go
 
-.env.yaml
-scripts/*.env
+**/env.json
 
-bin
